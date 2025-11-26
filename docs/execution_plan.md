@@ -701,12 +701,12 @@ module.exports = logger;
 **예상 시간**: 30분
 
 **완료 조건**:
-- [ ] `backend/_lib/utils/jwt.js` 파일 생성
-- [ ] Access Token 생성 함수
-- [ ] Refresh Token 생성 함수
-- [ ] 토큰 검증 함수
-- [ ] 토큰 디코드 함수
-- [ ] 단위 테스트 작성 및 통과
+- [x] `backend/_lib/utils/jwt.js` 파일 생성
+- [x] Access Token 생성 함수
+- [x] Refresh Token 생성 함수
+- [x] 토큰 검증 함수
+- [x] 토큰 디코드 함수
+- [x] 단위 테스트 작성 및 통과
 
 **의존성**:
 - BE-1 완료 필수
@@ -774,6 +774,11 @@ console.log('Token:', token);
 const decoded = verifyAccessToken(token);
 console.log('Decoded:', decoded);
 ```
+
+**수행 결과 (2025-11-26)**:
+- `backend/_lib/utils/jwt.js`에 Access/Refresh 토큰 발급, 검증, 디코딩 헬퍼를 구현하고 만료 시간(15분/7일)을 고정 상수로 관리하도록 했습니다.
+- `backend/_lib/utils/jwt.test.js`를 추가해 `generate* → verify* → decodeToken` 흐름을 검증했으며, 내부에서 테스트용 Secret을 주입해 환경 변수 의존성을 제거했습니다.
+- `cd backend && node _lib/utils/jwt.test.js`를 실행해 "JWT util tests passed" 로그를 확인했습니다.
 
 ---
 
