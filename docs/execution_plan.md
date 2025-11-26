@@ -902,14 +902,14 @@ module.exports = {
 **예상 시간**: 50분
 
 **완료 조건**:
-- [ ] `backend/_lib/services/authService.js` 파일 생성
-- [ ] `signup()` - 회원가입 비즈니스 로직
-- [ ] `login()` - 로그인 비즈니스 로직
-- [ ] `refresh()` - 토큰 갱신 비즈니스 로직
-- [ ] 이메일 중복 검증
-- [ ] 비밀번호 유효성 검증
-- [ ] 에러 처리 (커스텀 에러 클래스)
-- [ ] 통합 테스트
+- [x] `backend/_lib/services/authService.js` 파일 생성
+- [x] `signup()` - 회원가입 비즈니스 로직
+- [x] `login()` - 로그인 비즈니스 로직
+- [x] `refresh()` - 토큰 갱신 비즈니스 로직
+- [x] 이메일 중복 검증
+- [x] 비밀번호 유효성 검증
+- [x] 에러 처리 (커스텀 에러 클래스)
+- [x] 통합 테스트
 
 **의존성**:
 - BE-5, BE-6 완료 필수
@@ -918,8 +918,8 @@ module.exports = {
 ```javascript
 // backend/_lib/services/authService.js
 const userRepository = require('../repositories/userRepository');
-const { hashPassword, comparePassword } = require('../utils/bcrypt');
-const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/jwt');
+const bcryptUtil = require('../utils/bcrypt');
+const jwtUtil = require('../utils/jwt');
 
 async function signup({ email, password, nickname }) {
   // 1. 이메일 중복 검사
@@ -940,7 +940,7 @@ async function signup({ email, password, nickname }) {
   }
 
   // 3. 비밀번호 해싱
-  const passwordHash = await hashPassword(password);
+  const passwordHash = await bcryptUtil.hashPassword(password);
 
   // 4. 사용자 생성
   const user = await userRepository.createUser({
@@ -950,8 +950,8 @@ async function signup({ email, password, nickname }) {
   });
 
   // 5. 토큰 생성
-  const accessToken = generateAccessToken({ userId: user.user_id, email: user.email });
-  const refreshToken = generateRefreshToken({ userId: user.user_id });
+  const accessToken = jwtUtil.generateAccessToken({ userId: user.user_id, email: user.email });
+  const refreshToken = jwtUtil.generateRefreshToken({ userId: user.user_id });
 
   return {
     user: {
@@ -976,7 +976,7 @@ async function login({ email, password }) {
   }
 
   // 2. 비밀번호 검증
-  const isPasswordValid = await comparePassword(password, user.password_hash);
+  const isPasswordValid = await bcryptUtil.comparePassword(password, user.password_hash);
   if (!isPasswordValid) {
     const error = new Error('이메일 또는 비밀번호가 일치하지 않습니다');
     error.statusCode = 401;
@@ -988,8 +988,8 @@ async function login({ email, password }) {
   await userRepository.updateLastLogin(user.user_id);
 
   // 4. 토큰 생성
-  const accessToken = generateAccessToken({ userId: user.user_id, email: user.email });
-  const refreshToken = generateRefreshToken({ userId: user.user_id });
+  const accessToken = jwtUtil.generateAccessToken({ userId: user.user_id, email: user.email });
+  const refreshToken = jwtUtil.generateRefreshToken({ userId: user.user_id });
 
   return {
     user: {
@@ -1008,7 +1008,7 @@ async function refresh(refreshToken) {
   // 1. Refresh Token 검증
   let payload;
   try {
-    payload = verifyRefreshToken(refreshToken);
+    payload = jwtUtil.verifyRefreshToken(refreshToken);
   } catch (err) {
     const error = new Error('유효하지 않거나 만료된 토큰입니다');
     error.statusCode = 401;
@@ -1026,7 +1026,7 @@ async function refresh(refreshToken) {
   }
 
   // 3. 새 Access Token 생성
-  const newAccessToken = generateAccessToken({ userId: user.user_id, email: user.email });
+  const newAccessToken = jwtUtil.generateAccessToken({ userId: user.user_id, email: user.email });
 
   return {
     accessToken: newAccessToken
@@ -1039,6 +1039,13 @@ module.exports = {
   refresh
 };
 ```
+
+---
+
+**수행 결과 (2025-11-26)**:
+- `backend/_lib/services/authService.js`에서 signup/login/refresh 로직과 커스텀 에러 헬퍼를 구현했습니다. bcrypt/jwt 모듈을 객체 형태로 참조해 테스트에서 모킹할 수 있도록 했습니다.
+- `backend/_lib/services/authService.test.js`를 추가해 정상 흐름과 중복 이메일, 잘못된 로그인, 만료된 Refresh Token 시나리오를 수동으로 검증합니다.
+- `cd backend && node _lib/services/authService.test.js` 실행 시 `[DB] POSTGRES_CONNECTION_STRING...` 경고 후 `auth service tests passed` 로그가 출력됩니다.
 
 ---
 
