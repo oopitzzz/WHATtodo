@@ -1276,3 +1276,45 @@ CREATE INDEX idx_todos_user_status ON todos(user_id, status);
 
 **문서 버전:** 2.0
 **마지막 업데이트:** 2025-11-26
+
+## Error Model & Code Catalog
+### Error JSON Contract
+```json
+{
+  "error": {
+    "code": "TODO_NOT_FOUND",
+    "message": "리소스를 찾을 수 없습니다.",
+    "details": "todo_id=..."
+  }
+}
+```
+
+### Naming Rule
+- **HTTP 400**: `VALIDATION_*` (예: `VALIDATION_TITLE_REQUIRED`, `VALIDATION_EMAIL_INVALID`)
+- **HTTP 401/403**: `AUTH_*` / `FORBIDDEN_*` (예: `AUTH_INVALID_CREDENTIALS`, `AUTH_TOKEN_EXPIRED`)
+- **HTTP 404**: `*_NOT_FOUND` (예: `TODO_NOT_FOUND`, `USER_NOT_FOUND`)
+- **HTTP 409**: `*_CONFLICT` / `*_ALREADY_*` (예: `AUTH_EMAIL_DUPLICATE`, `TODO_ALREADY_COMPLETED`)
+
+### Client Action Guideline
+- **VALIDATION_*** → 필드 인라인 에러 및 포커스 이동
+- **AUTH_*** → 로그인/토큰 재발급 플로우 유도(재시도 1회 제한)
+- ***_NOT_FOUND** → 목록 화면 리다이렉트 + 토스트
+- ***_CONFLICT** → 현재 상태 재동기화 후 토스트
+
+### Catalog
+| HTTP | code                        | 언제 발생                                           | 클라이언트 액션                  |
+|------|-----------------------------|-----------------------------------------------------|----------------------------------|
+| 400  | VALIDATION_TITLE_REQUIRED   | Todo 생성/수정 시 title 누락                       | 필드 강조 + 도움말 표시          |
+| 400  | VALIDATION_DUE_DATE_PAST    | 과거 기한으로 요청(알림 생성 불가)                 | 날짜 필드 재입력 유도            |
+| 401  | AUTH_INVALID_CREDENTIALS    | 로그인 자격 증명 불일치                            | 인라인 에러, 남용시 지연         |
+| 401  | AUTH_TOKEN_EXPIRED          | Access 만료, Refresh도 만료                         | 재로그인 유도                    |
+| 403  | FORBIDDEN_RESOURCE_OWNER    | 타 사용자 리소스 접근 시도                          | 대시보드로 이동                  |
+| 404  | TODO_NOT_FOUND              | id가 존재하지 않음/삭제됨                           | 목록 리다이렉트 + 토스트         |
+| 404  | USER_NOT_FOUND              | `/users/me` 조회 실패                               | 재로그인 유도                    |
+| 409  | AUTH_EMAIL_DUPLICATE        | 회원가입 시 이메일 중복                             | 인라인 에러                      |
+| 409  | TODO_ALREADY_COMPLETED      | 이미 완료된 Todo를 다시 완료 처리 요청              | 토스트 안내                      |
+| 409  | TODO_ALREADY_ACTIVE         | 삭제 복원 시 이미 ACTIVE 상태                       | 토스트 안내                      |
+
+### Retry Policy
+- **Idempotent**: `GET`, `PUT`(동일 페이로드), `DELETE`(영구삭제 제외) → 네트워크 오류 시 1회 자동 재시도
+- **Non‑Idempotent**: `POST`(생성), `PATCH`(상태변경) → 자동 재시도 금지, 사용자 확인 후 재요청

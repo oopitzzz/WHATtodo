@@ -634,3 +634,23 @@ WHATtodo는 사용자 인증 기반의 할일 관리 애플리케이션입니다
 1. DB 스키마 설계 (`docs/4-database-schema.md`)
 2. API 명세서 작성 (`docs/5-api-specification.md`)
 3. 개발 시작
+
+## API–UI Mapping Matrix (MVP)
+| 화면/컴포넌트           | API                                   | 요청 파라미터/바디                          | 성공 UI                                       | 실패 UI(코드)                      | 상태키       |
+|-------------------------|----------------------------------------|---------------------------------------------|-----------------------------------------------|-------------------------------------|-------------|
+| **SignupForm**          | POST `/api/auth/signup`                | { email, password, nickname }               | 토큰 저장 → 대시보드 이동                     | AUTH_EMAIL_DUPLICATE, VALIDATION_*  | `auth.*`    |
+| **LoginForm**           | POST `/api/auth/login`                 | { email, password }                         | 토큰 저장 → 대시보드 이동                     | AUTH_INVALID_CREDENTIALS            | `auth.*`    |
+| **TokenInterceptor**    | POST `/api/auth/refresh`               | { refreshToken }                            | access 교체 후 원요청 재시도(1회)             | AUTH_TOKEN_EXPIRED                  | `auth.*`    |
+| **TodoList**            | GET `/api/todos`                       | status, dueFrom, dueTo, sortBy, page        | 리스트 렌더 + Skeleton                         | 서버 에러 토스트                     | `todo.list` |
+| **TodoForm(Create)**    | POST `/api/todos`                      | { title, description, priority, due_date… } | 모달 닫기 → 목록 갱신                         | VALIDATION_*, VALIDATION_DUE_DATE_PAST | `todo.form` |
+| **TodoForm(Edit)**      | PUT `/api/todos/{id}`                  | 동일                                         | 상세/목록 갱신                                 | TODO_NOT_FOUND, VALIDATION_*        | `todo.form` |
+| **CompleteButton**      | PATCH `/api/todos/{id}/complete`       | path: id                                     | 상태=COMPLETED + 체크마크 애니메이션           | TODO_ALREADY_COMPLETED, TODO_NOT_FOUND | `todo.item` |
+| **DeleteButton(Soft)**  | DELETE `/api/todos/{id}`               | path: id                                     | 휴지통으로 이동(상태=DELETED)                  | TODO_NOT_FOUND                      | `todo.item` |
+| **TrashView**           | GET `/api/trash`                       | page, pageSize                               | 삭제 항목 나열                                 | 서버 에러 토스트                     | `trash.*`   |
+| **TrashDeleteForever**  | DELETE `/api/trash/{id}`               | path: id                                     | 목록 갱신                                      | TODO_NOT_FOUND                      | `trash.*`   |
+| **TrashRestore**        | PATCH `/api/todos/{id}/restore`        | path: id                                     | 상태=ACTIVE, 목록 갱신                         | TODO_ALREADY_ACTIVE, TODO_NOT_FOUND | `trash.*`   |
+| **CalendarView**        | GET `/api/calendar/holidays`           | year, month                                  | 월간 캘린더 표기                               | 서버 에러 토스트                     | `calendar.*`|
+| **Settings/Profile**    | GET `/api/users/me`                    | -                                            | 폼 초기화                                      | USER_NOT_FOUND                      | `user.*`    |
+| **Settings/Update**     | PUT `/api/users/me`                    | { nickname, notification_enabled, … }        | 저장 토스트                                   | VALIDATION_*, AUTH_*                | `user.*`    |
+
+> 실패 UI 정책: 필드 오류는 인라인, 시스템 오류는 상단 토스트. 토큰 만료는 인터셉터에서 자동 처리(재시도 1회).
