@@ -1310,11 +1310,11 @@ module.exports = {
 **예상 시간**: 20분
 
 **완료 조건**:
-- [ ] `backend/_lib/middleware/auth.js` 파일 생성
-- [ ] Authorization 헤더 검증
-- [ ] Access Token 검증
-- [ ] `req.user` 객체 설정
-- [ ] 에러 처리 (401 Unauthorized)
+- [x] `backend/_lib/middleware/auth.js` 파일 생성
+- [x] Authorization 헤더 검증
+- [x] Access Token 검증
+- [x] `req.user` 객체 설정
+- [x] 에러 처리 (401 Unauthorized)
 
 **의존성**:
 - BE-4 완료 필수
@@ -1322,46 +1322,45 @@ module.exports = {
 **구현 코드**:
 ```javascript
 // backend/_lib/middleware/auth.js
-const { verifyAccessToken } = require('../utils/jwt');
+let jwtUtil = require('../utils/jwt');
 
 function authMiddleware(req, res, next) {
+  const authHeader = req.headers?.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      error: { code: 'AUTH_TOKEN_MISSING', message: '인증 토큰이 필요합니다' },
+    });
+  }
+
+  const token = authHeader.slice(7).trim();
+  if (!token) {
+    return res.status(401).json({
+      error: { code: 'AUTH_TOKEN_MISSING', message: '인증 토큰이 필요합니다' },
+    });
+  }
+
   try {
-    // 1. Authorization 헤더 확인
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: {
-          code: 'AUTH_TOKEN_MISSING',
-          message: '인증 토큰이 필요합니다'
-        }
-      });
-    }
-
-    // 2. 토큰 추출
-    const token = authHeader.substring(7); // "Bearer " 제거
-
-    // 3. 토큰 검증
-    const payload = verifyAccessToken(token);
-
-    // 4. req.user 설정
-    req.user = {
-      userId: payload.userId,
-      email: payload.email
-    };
-
-    next();
+    const payload = jwtUtil.verifyAccessToken(token);
+    req.user = { userId: payload.userId, email: payload.email };
+    return next();
   } catch (err) {
     return res.status(401).json({
-      error: {
-        code: 'AUTH_TOKEN_INVALID',
-        message: '유효하지 않거나 만료된 토큰입니다'
-      }
+      error: { code: 'AUTH_TOKEN_INVALID', message: '유효하지 않거나 만료된 토큰입니다' },
     });
   }
 }
 
+authMiddleware.__setJwtUtil = function setJwtUtil(mock) {
+  jwtUtil = mock || require('../utils/jwt');
+};
+
 module.exports = authMiddleware;
 ```
+
+**수행 결과 (2025-11-26)**:
+- `backend/_lib/middleware/auth.js`에 Access Token 검증 미들웨어를 구현하고, 테스트에서 jwt 유틸을 주입할 수 있도록 `__setJwtUtil` 헬퍼를 제공했습니다.
+- `backend/_lib/middleware/auth.test.js`를 추가해 토큰 누락/유효하지 않은 토큰/정상 토큰 시나리오를 검증했습니다.
+- `cd backend && node _lib/middleware/auth.test.js` 실행 시 `auth middleware tests passed` 로그로 테스트를 확인했습니다.
 
 ---
 
