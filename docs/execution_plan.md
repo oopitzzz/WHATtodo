@@ -831,14 +831,14 @@ module.exports = {
 **예상 시간**: 40분
 
 **완료 조건**:
-- [ ] `backend/_lib/repositories/userRepository.js` 파일 생성
-- [ ] `createUser()` - 회원가입
-- [ ] `findUserByEmail()` - 이메일로 사용자 조회
-- [ ] `findUserById()` - ID로 사용자 조회
-- [ ] `updateUser()` - 프로필 수정
-- [ ] `updateLastLogin()` - 마지막 로그인 시각 업데이트
-- [ ] SQL Injection 방지 (Prepared Statement)
-- [ ] 각 함수 단위 테스트
+- [x] `backend/_lib/repositories/userRepository.js` 파일 생성
+- [x] `createUser()` - 회원가입
+- [x] `findUserByEmail()` - 이메일로 사용자 조회
+- [x] `findUserById()` - ID로 사용자 조회
+- [x] `updateUser()` - 프로필 수정
+- [x] `updateLastLogin()` - 마지막 로그인 시각 업데이트
+- [x] SQL Injection 방지 (Prepared Statement)
+- [x] 각 함수 단위 테스트
 
 **의존성**:
 - BE-2 완료 필수
@@ -848,52 +848,26 @@ module.exports = {
 // backend/_lib/repositories/userRepository.js
 const { pool } = require('../db');
 
+let activePool = pool;
+
+function __setPool(customPool) {
+  activePool = customPool || pool;
+}
+
+function __resetPool() {
+  activePool = pool;
+}
+
 async function createUser({ email, passwordHash, nickname }) {
   const query = `
     INSERT INTO users (email, password_hash, nickname)
     VALUES ($1, $2, $3)
-    RETURNING user_id, email, nickname, notification_enabled, created_at
+    RETURNING user_id, email, nickname, profile_image_url,
+              notification_enabled, created_at, last_login_at
   `;
-
-  const result = await pool.query(query, [email, passwordHash, nickname]);
-  return result.rows[0];
-}
-
-async function findUserByEmail(email) {
-  const query = `
-    SELECT user_id, email, password_hash, nickname, profile_image_url,
-           notification_enabled, created_at, last_login_at
-    FROM users
-    WHERE email = $1
-  `;
-
-  const result = await pool.query(query, [email]);
-  return result.rows[0];
-}
-
-async function findUserById(userId) {
-  const query = `
-    SELECT user_id, email, nickname, profile_image_url,
-           notification_enabled, created_at, last_login_at
-    FROM users
-    WHERE user_id = $1
-  `;
-
-  const result = await pool.query(query, [userId]);
-  return result.rows[0];
-}
-
-async function updateUser(userId, { nickname, profileImageUrl }) {
-  const query = `
-    UPDATE users
-    SET nickname = COALESCE($2, nickname),
-        profile_image_url = COALESCE($3, profile_image_url)
-    WHERE user_id = $1
-    RETURNING user_id, email, nickname, profile_image_url, notification_enabled
-  `;
-
-  const result = await pool.query(query, [userId, nickname, profileImageUrl]);
-  return result.rows[0];
+  const values = [email, passwordHash, nickname];
+  const { rows } = await activePool.query(query, values);
+  return rows[0];
 }
 
 async function updateLastLogin(userId) {
@@ -902,8 +876,7 @@ async function updateLastLogin(userId) {
     SET last_login_at = CURRENT_TIMESTAMP
     WHERE user_id = $1
   `;
-
-  await pool.query(query, [userId]);
+  await activePool.query(query, [userId]);
 }
 
 module.exports = {
@@ -911,9 +884,16 @@ module.exports = {
   findUserByEmail,
   findUserById,
   updateUser,
-  updateLastLogin
+  updateLastLogin,
+  __setPool,
+  __resetPool
 };
 ```
+
+**수행 결과 (2025-11-26)**:
+- `backend/_lib/repositories/userRepository.js`에 5개 함수를 구현하고, 테스트를 위해 `__setPool/__resetPool` 헬퍼를 추가했습니다. 업데이트 시 COALESCE를 사용해 NULL 입력을 방지했습니다.
+- `backend/_lib/repositories/userRepository.test.js`로 `create/find/update/updateLastLogin` 케이스를 검증했습니다. MockPool을 사용해 Prepared Statement 파라미터 구성을 확인했습니다.
+- `cd backend && node _lib/repositories/userRepository.test.js` 실행 시 `[DB] POSTGRES_CONNECTION_STRING is not defined...` 경고 후 `user repository tests passed` 로그가 출력됩니다.
 
 ---
 
