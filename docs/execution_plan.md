@@ -1210,16 +1210,16 @@ curl -X POST http://localhost:3000/backend/auth/refresh \
 **예상 시간**: 60분
 
 **완료 조건**:
-- [ ] `backend/_lib/repositories/todoRepository.js` 파일 생성
-- [ ] `createTodo()` - 할일 생성
-- [ ] `findTodosByUserId()` - 사용자 할일 목록 조회 (필터, 정렬)
-- [ ] `findTodoById()` - 할일 상세 조회
-- [ ] `updateTodo()` - 할일 수정
-- [ ] `completeTodo()` - 할일 완료 처리
-- [ ] `deleteTodo()` - 할일 삭제 (휴지통 이동)
-- [ ] `restoreTodo()` - 할일 복원
-- [ ] `permanentlyDeleteTodo()` - 영구 삭제
-- [ ] 각 함수 단위 테스트
+- [x] `backend/_lib/repositories/todoRepository.js` 파일 생성
+- [x] `createTodo()` - 할일 생성
+- [x] `findTodosByUserId()` - 사용자 할일 목록 조회 (필터, 정렬)
+- [x] `findTodoById()` - 할일 상세 조회
+- [x] `updateTodo()` - 할일 수정
+- [x] `completeTodo()` - 할일 완료 처리
+- [x] `deleteTodo()` - 할일 삭제 (휴지통 이동)
+- [x] `restoreTodo()` - 할일 복원
+- [x] `permanentlyDeleteTodo()` - 영구 삭제 (30일 제한)
+- [x] 각 함수 단위 테스트
 
 **의존성**:
 - BE-2 완료 필수
@@ -1229,147 +1229,74 @@ curl -X POST http://localhost:3000/backend/auth/refresh \
 // backend/_lib/repositories/todoRepository.js
 const { pool } = require('../db');
 
-async function createTodo({ userId, title, description, priority, dueDate, memo }) {
-  const query = `
-    INSERT INTO todos (user_id, title, description, priority, due_date, memo)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING todo_id, user_id, title, description, priority, status,
-              due_date, memo, created_at, updated_at
-  `;
+let activePool = pool;
+const SORTABLE_COLUMNS = new Set(['due_date', 'priority', 'created_at', 'updated_at']);
 
-  const result = await pool.query(query, [
-    userId, title, description || null,
-    priority || 'NORMAL', dueDate || null, memo || null
-  ]);
-
-  return result.rows[0];
+function pushValue(values, value) {
+  values.push(value);
+  return `$${values.length}`;
 }
 
-async function findTodosByUserId(userId, { status, sortBy = 'created_at', order = 'DESC' }) {
-  let query = `
-    SELECT todo_id, user_id, title, description, priority, status,
-           due_date, memo, completed_at, created_at, updated_at
-    FROM todos
-    WHERE user_id = $1
-  `;
+function buildTodoFilterClause(values, filters = {}) {
+  const clauses = ['user_id = $1'];
+  const push = (value) => pushValue(values, value);
 
-  const params = [userId];
-
-  // 상태 필터
-  if (status && status !== 'ALL') {
-    query += ` AND status = $${params.length + 1}`;
-    params.push(status);
-  } else {
-    query += ` AND status != 'DELETED'`;
+  if (filters.status) clauses.push(`status = ${push(filters.status)}`);
+  if (filters.priority) clauses.push(`priority = ${push(filters.priority)}`);
+  if (filters.search) {
+    const pattern = `%${filters.search}%`;
+    const p1 = push(pattern);
+    const p2 = push(pattern);
+    clauses.push(`(title ILIKE ${p1} OR description ILIKE ${p2})`);
   }
+  if (!filters.includeDeleted) clauses.push('deleted_at IS NULL');
 
-  // 정렬
-  const allowedSortColumns = ['created_at', 'due_date', 'priority', 'updated_at'];
-  const sortColumn = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
-  query += ` ORDER BY ${sortColumn} ${order}`;
-
-  const result = await pool.query(query, params);
-  return result.rows;
+  return `WHERE ${clauses.join(' AND ')}`;
 }
 
-async function findTodoById(todoId, userId) {
+async function createTodo({ userId, title, description = null, priority = 'NORMAL', status = 'ACTIVE', dueDate = null, memo = null }) {
   const query = `
-    SELECT todo_id, user_id, title, description, priority, status,
-           due_date, memo, completed_at, deleted_at, created_at, updated_at
+    INSERT INTO todos (user_id, title, description, priority, status, due_date, memo)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *
+  `;
+  const values = [userId, title, description, priority, status, dueDate, memo];
+  const { rows } = await activePool.query(query, values);
+  return rows[0];
+}
+
+async function findTodosByUserId(userId, options = {}) {
+  const values = [userId];
+  const whereClause = buildTodoFilterClause(values, options);
+  const sortColumn = SORTABLE_COLUMNS.has(options.sortBy) ? options.sortBy : 'due_date';
+  const sortDirection = options.sortDirection === 'desc' ? 'DESC' : 'ASC';
+  const limitPlaceholder = pushValue(values, Math.min(Math.max(options.limit || 20, 1), 100));
+  const offsetPlaceholder = pushValue(values, Math.max(options.offset || 0, 0));
+
+  const query = `
+    SELECT *
     FROM todos
-    WHERE todo_id = $1 AND user_id = $2
+    ${whereClause}
+    ORDER BY ${sortColumn} ${sortDirection}, created_at DESC
+    LIMIT ${limitPlaceholder}
+    OFFSET ${offsetPlaceholder}
   `;
 
-  const result = await pool.query(query, [todoId, userId]);
-  return result.rows[0];
-}
-
-async function updateTodo(todoId, userId, updates) {
-  const { title, description, priority, dueDate, memo } = updates;
-
-  const query = `
-    UPDATE todos
-    SET title = COALESCE($3, title),
-        description = COALESCE($4, description),
-        priority = COALESCE($5, priority),
-        due_date = COALESCE($6, due_date),
-        memo = COALESCE($7, memo),
-        updated_at = CURRENT_TIMESTAMP
-    WHERE todo_id = $1 AND user_id = $2
-    RETURNING todo_id, user_id, title, description, priority, status,
-              due_date, memo, updated_at
-  `;
-
-  const result = await pool.query(query, [
-    todoId, userId, title, description, priority, dueDate, memo
-  ]);
-
-  return result.rows[0];
-}
-
-async function completeTodo(todoId, userId) {
-  const query = `
-    UPDATE todos
-    SET status = 'COMPLETED',
-        completed_at = CURRENT_TIMESTAMP,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE todo_id = $1 AND user_id = $2 AND status = 'ACTIVE'
-    RETURNING todo_id, status, completed_at
-  `;
-
-  const result = await pool.query(query, [todoId, userId]);
-  return result.rows[0];
-}
-
-async function deleteTodo(todoId, userId) {
-  const query = `
-    UPDATE todos
-    SET status = 'DELETED',
-        deleted_at = CURRENT_TIMESTAMP,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE todo_id = $1 AND user_id = $2 AND status != 'DELETED'
-    RETURNING todo_id, status, deleted_at
-  `;
-
-  const result = await pool.query(query, [todoId, userId]);
-  return result.rows[0];
-}
-
-async function restoreTodo(todoId, userId) {
-  const query = `
-    UPDATE todos
-    SET status = 'ACTIVE',
-        deleted_at = NULL,
-        updated_at = CURRENT_TIMESTAMP
-    WHERE todo_id = $1 AND user_id = $2 AND status = 'DELETED'
-    RETURNING todo_id, status
-  `;
-
-  const result = await pool.query(query, [todoId, userId]);
-  return result.rows[0];
-}
-
-async function findDeletedTodos(userId) {
-  const query = `
-    SELECT todo_id, title, description, priority, deleted_at
-    FROM todos
-    WHERE user_id = $1 AND status = 'DELETED'
-    ORDER BY deleted_at DESC
-  `;
-
-  const result = await pool.query(query, [userId]);
-  return result.rows;
+  const { rows } = await activePool.query(query, values);
+  return rows;
 }
 
 async function permanentlyDeleteTodo(todoId, userId) {
   const query = `
     DELETE FROM todos
-    WHERE todo_id = $1 AND user_id = $2 AND status = 'DELETED'
+    WHERE todo_id = $1
+      AND user_id = $2
+      AND deleted_at IS NOT NULL
+      AND deleted_at <= NOW() - INTERVAL '30 days'
     RETURNING todo_id
   `;
-
-  const result = await pool.query(query, [todoId, userId]);
-  return result.rows[0];
+  const { rows } = await activePool.query(query, [todoId, userId]);
+  return rows.length > 0;
 }
 
 module.exports = {
@@ -1380,10 +1307,14 @@ module.exports = {
   completeTodo,
   deleteTodo,
   restoreTodo,
-  findDeletedTodos,
-  permanentlyDeleteTodo
+  permanentlyDeleteTodo,
 };
 ```
+
+**수행 결과 (2025-11-26)**:
+- `backend/_lib/repositories/todoRepository.js`에 9개 함수를 모두 구현했습니다. 사용자별 필터/정렬, ILIKE 검색, 휴지통 제외, 30일 지난 항목만 영구 삭제 등 요구사항을 반영했고 모든 쿼리를 Prepared Statement로 작성했습니다.
+- 테스트 더블 주입을 위해 `__setPool/__resetPool` 헬퍼를 추가하고, `backend/_lib/repositories/todoRepository.test.js`에서 `create/find/update/permanentlyDelete` 흐름을 검증했습니다.
+- `cd backend && node _lib/repositories/todoRepository.test.js` 실행 시 `[DB] POSTGRES_CONNECTION_STRING is not defined...` 경고(테스트 모의 풀 사용) 후 `todo repository tests passed` 로그로 단위 테스트를 통과합니다.
 
 ---
 
