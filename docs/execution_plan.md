@@ -789,11 +789,11 @@ console.log('Decoded:', decoded);
 **예상 시간**: 15분
 
 **완료 조건**:
-- [ ] `backend/_lib/utils/bcrypt.js` 파일 생성
-- [ ] 비밀번호 해싱 함수
-- [ ] 비밀번호 검증 함수
-- [ ] Salt rounds 설정 (10)
-- [ ] 단위 테스트 통과
+- [x] `backend/_lib/utils/bcrypt.js` 파일 생성
+- [x] 비밀번호 해싱 함수
+- [x] 비밀번호 검증 함수
+- [x] Salt rounds 설정 (10)
+- [x] 단위 테스트 통과
 
 **의존성**:
 - BE-1 완료 필수
@@ -818,6 +818,11 @@ module.exports = {
   comparePassword
 };
 ```
+
+**수행 결과 (2025-11-26)**:
+- `backend/_lib/utils/bcrypt.js`에 `hashPassword`, `comparePassword`를 구현하고 기본 salt rounds를 10으로, 환경 변수(`BCRYPT_SALT_ROUNDS`)가 있으면 재정의되도록 했습니다.
+- `backend/_lib/utils/bcrypt.test.js`를 추가해 hash/compare 플로우를 검증했습니다. 정상 케이스와 실패 케이스를 각각 검사해 로직이 올바르게 동작함을 확인했습니다.
+- `cd backend && node _lib/utils/bcrypt.test.js` 실행 시 "bcrypt util tests passed" 로그가 출력됩니다.
 
 ---
 
