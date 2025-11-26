@@ -139,10 +139,10 @@ graph TD
 ```
 
 **Vercel Serverless 구조:**
-- `/api/auth` - 인증 API
-- `/api/todos` - 할일 API
-- `/api/users` - 사용자 API
-- `/api/_lib` - 공유 모듈 (서비스, 리포지토리, 미들웨어)
+- `/backend/auth` - 인증 API
+- `/backend/todos` - 할일 API
+- `/backend/users` - 사용자 API
+- `/backend/_lib` - 공유 모듈 (서비스, 리포지토리, 미들웨어)
 
 ---
 
@@ -163,7 +163,7 @@ sequenceDiagram
     User->>UI: 할일 입력 및 제출
     UI->>UI: 클라이언트 유효성 검사
     UI->>Store: createTodo(data)
-    Store->>API: POST /api/todos
+    Store->>API: POST /backend/todos
     Note over API: Authorization: Bearer token
     API->>Backend: HTTP Request
     Backend->>Backend: JWT 토큰 검증
@@ -191,7 +191,7 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     UI->>Store: fetchTodos()
-    Store->>API: GET /api/todos
+    Store->>API: GET /backend/todos
     API->>Backend: HTTP Request + JWT
     Backend->>Backend: 토큰 검증 및 user_id 추출
     Backend->>Repo: findTodosByUserId(userId)
@@ -215,11 +215,11 @@ sequenceDiagram
     participant User as 사용자
     participant UI as LoginForm
     participant API as authApi.js
-    participant Backend as /api/auth/login
+    participant Backend as /backend/auth/login
     participant DB as PostgreSQL
 
     User->>UI: 이메일/비밀번호 입력
-    UI->>API: POST /api/auth/login
+    UI->>API: POST /backend/auth/login
     API->>Backend: { email, password }
     Backend->>DB: SELECT * FROM users WHERE email = ?
     DB-->>Backend: user 정보
@@ -238,13 +238,13 @@ sequenceDiagram
 sequenceDiagram
     participant UI as Component
     participant Interceptor as Axios Interceptor
-    participant Refresh as /api/auth/refresh
+    participant Refresh as /backend/auth/refresh
     participant API as Original API
 
     UI->>API: API 요청 (만료된 토큰)
     API-->>UI: 401 Unauthorized
     UI->>Interceptor: 에러 감지
-    Interceptor->>Refresh: POST /api/auth/refresh
+    Interceptor->>Refresh: POST /backend/auth/refresh
     Note over Refresh: Refresh Token 전송
     Refresh->>Refresh: Refresh Token 검증
     Refresh-->>Interceptor: 새 Access Token
@@ -274,9 +274,9 @@ graph TB
         end
 
         subgraph Backend["Serverless Functions"]
-            AuthFunc[/api/auth/*]
-            TodoFunc[/api/todos/*]
-            UserFunc[/api/users/*]
+            AuthFunc[/backend/auth/*]
+            TodoFunc[/backend/todos/*]
+            UserFunc[/backend/users/*]
         end
 
         EnvVars[Environment Variables]

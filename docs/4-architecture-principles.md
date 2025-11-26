@@ -356,12 +356,12 @@ Database
 
 | 메서드 | 경로                      | 용도      | 명명 규칙        |
 | ------ | ------------------------- | --------- | ---------------- |
-| GET    | `/api/todos`              | 목록 조회 | 명사 복수형      |
-| GET    | `/api/todos/:id`          | 단건 조회 | 명사 복수형 + ID |
-| POST   | `/api/todos`              | 생성      | 명사 복수형      |
-| PUT    | `/api/todos/:id`          | 전체 수정 | 명사 복수형 + ID |
-| PATCH  | `/api/todos/:id/complete` | 부분 수정 | 명사 + 동작      |
-| DELETE | `/api/todos/:id`          | 삭제      | 명사 복수형 + ID |
+| GET    | `/backend/todos`              | 목록 조회 | 명사 복수형      |
+| GET    | `/backend/todos/:id`          | 단건 조회 | 명사 복수형 + ID |
+| POST   | `/backend/todos`              | 생성      | 명사 복수형      |
+| PUT    | `/backend/todos/:id`          | 전체 수정 | 명사 복수형 + ID |
+| PATCH  | `/backend/todos/:id/complete` | 부분 수정 | 명사 + 동작      |
+| DELETE | `/backend/todos/:id`          | 삭제      | 명사 복수형 + ID |
 
 **규칙:**
 
@@ -621,7 +621,7 @@ Database
 
 ```
 /src
-├── api/                # API 호출 서비스
+├── backend/                # API 호출 서비스
 │   ├── client.js       # Axios 인스턴스 설정 (baseURL, 인터셉터)
 │   ├── authApi.js      # 인증 API 함수 (login, signup, refresh)
 │   ├── todoApi.js      # 할일 API 함수 (getTodos, createTodo 등)
@@ -739,26 +739,26 @@ Database
 ```
 /api
 ├── auth/               # 인증 API
-│   ├── login.js        # POST /api/auth/login
-│   ├── signup.js       # POST /api/auth/signup
-│   ├── logout.js       # POST /api/auth/logout
-│   └── refresh.js      # POST /api/auth/refresh
+│   ├── login.js        # POST /backend/auth/login
+│   ├── signup.js       # POST /backend/auth/signup
+│   ├── logout.js       # POST /backend/auth/logout
+│   └── refresh.js      # POST /backend/auth/refresh
 │
 ├── todos/              # 할일 API
-│   ├── index.js        # GET /api/todos, POST /api/todos
-│   ├── [id].js         # GET, PUT, DELETE /api/todos/:id
-│   ├── complete.js     # PATCH /api/todos/:id/complete
-│   └── restore.js      # PATCH /api/todos/:id/restore
+│   ├── index.js        # GET /backend/todos, POST /backend/todos
+│   ├── [id].js         # GET, PUT, DELETE /backend/todos/:id
+│   ├── complete.js     # PATCH /backend/todos/:id/complete
+│   └── restore.js      # PATCH /backend/todos/:id/restore
 │
 ├── users/              # 사용자 API
-│   └── me.js           # GET /api/users/me, PUT /api/users/me
+│   └── me.js           # GET /backend/users/me, PUT /backend/users/me
 │
 ├── trash/              # 휴지통 API
-│   ├── index.js        # GET /api/trash
-│   └── [id].js         # DELETE /api/trash/:id (영구 삭제)
+│   ├── index.js        # GET /backend/trash
+│   └── [id].js         # DELETE /backend/trash/:id (영구 삭제)
 │
 ├── calendar/           # 캘린더 API
-│   └── holidays.js     # GET /api/calendar/holidays
+│   └── holidays.js     # GET /backend/calendar/holidays
 │
 ├── _lib/               # 공유 모듈 (Vercel _ 접두사 규칙)
 │   ├── db.js           # 데이터베이스 연결 및 쿼리 헬퍼
@@ -843,12 +843,12 @@ Database
    ▼
 [todoApi.js]
    │
-   ├─ (5) POST /api/todos 요청
+   ├─ (5) POST /backend/todos 요청
    │   - Headers: Authorization Bearer token
    │   - Body: { title, description, priority, dueDate }
    │
    ▼
-[백엔드 API: /api/todos/index.js]
+[백엔드 API: /backend/todos/index.js]
    │
    ├─ (6) CORS 미들웨어 적용
    │
@@ -920,7 +920,7 @@ Database
 [사용자 로그인 요청]
    │
    ▼
-POST /api/auth/login
+POST /backend/auth/login
    │
    ├─ 이메일/비밀번호 검증
    ├─ bcrypt로 비밀번호 확인
@@ -965,7 +965,7 @@ POST /api/auth/login
    │   [프론트엔드]
    │   │
    │   ├─ Refresh Token으로 갱신 요청
-   │   ├─ POST /api/auth/refresh
+   │   ├─ POST /backend/auth/refresh
    │   │
    │   ├─ ✅ 갱신 성공
    │   │   └─ 새 Access Token 발급

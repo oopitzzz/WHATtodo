@@ -507,7 +507,7 @@ VACUUM ANALYZE;
 **실행 명령**:
 ```bash
 # 프로젝트 디렉토리 생성
-mkdir -p api/_lib/{middleware,services,repositories,utils}
+mkdir -p backend/_lib/{middleware,services,repositories,utils}
 
 # package.json 생성
 cd api
@@ -525,7 +525,7 @@ cat > vercel.json << EOF
   "version": 2,
   "builds": [
     {
-      "src": "api/**/*.js",
+      "src": "backend/**/*.js",
       "use": "@vercel/node"
     }
   ]
@@ -537,8 +537,8 @@ EOF
 ```json
 {
   "scripts": {
-    "dev": "nodemon api/index.js",
-    "start": "node api/index.js"
+    "dev": "nodemon backend/index.js",
+    "start": "node backend/index.js"
   }
 }
 ```
@@ -547,13 +547,13 @@ EOF
 ```bash
 node -v  # v18 이상
 npm -v
-ls -la api/_lib  # 디렉토리 구조 확인
+ls -la backend/_lib  # 디렉토리 구조 확인
 ```
 
 **수행 결과 (2025-11-26)**:
-- `api/_lib` 이하에 `middleware/services/repositories/utils` 기본 폴더를 생성하고 `npm init -y`로 백엔드 패키지 구성을 시작했습니다.
-- `express`, `cors`, `dotenv`, `pg`, `jsonwebtoken`, `bcrypt`와 devDependency `nodemon`을 설치했으며, `package-lock.json`과 `api/node_modules`는 루트 `.gitignore` 규칙으로 제외됩니다.
-- `package.json`의 스크립트를 `dev`: `nodemon api/index.js`, `start`: `node api/index.js`로 정리하고, 헬스체크용 `api/index.js`와 Vercel 배포 설정(`api/vercel.json`)을 추가해 CLI에서 바로 실행/배포 테스트가 가능하도록 준비했습니다.
+- `backend/_lib` 이하에 `middleware/services/repositories/utils` 기본 폴더를 생성하고 `npm init -y`로 백엔드 패키지 구성을 시작했습니다.
+- `express`, `cors`, `dotenv`, `pg`, `jsonwebtoken`, `bcrypt`와 devDependency `nodemon`을 설치했으며, `package-lock.json`과 `backend/node_modules`는 루트 `.gitignore` 규칙으로 제외됩니다.
+- `package.json`의 스크립트를 `dev`: `nodemon backend/index.js`, `start`: `node backend/index.js`로 정리하고, 헬스체크용 `backend/index.js`와 Vercel 배포 설정(`backend/vercel.json`)을 추가해 CLI에서 바로 실행/배포 테스트가 가능하도록 준비했습니다.
 
 ---
 
@@ -562,7 +562,7 @@ ls -la api/_lib  # 디렉토리 구조 확인
 **예상 시간**: 20분
 
 **완료 조건**:
-- [x] `api/_lib/db.js` 파일 생성
+- [x] `backend/_lib/db.js` 파일 생성
 - [x] PostgreSQL 연결 풀 설정
 - [x] 연결 테스트 함수 구현
 - [x] 에러 핸들링 구현
@@ -573,7 +573,7 @@ ls -la api/_lib  # 디렉토리 구조 확인
 
 **구현 코드**:
 ```javascript
-// api/_lib/db.js
+// backend/_lib/db.js
 const { Pool } = require('pg');
 require('dotenv').config();
 
@@ -609,7 +609,7 @@ module.exports = { pool, testConnection };
 **검증 스크립트**:
 ```bash
 # 테스트 스크립트 실행
-node -e "require('./api/_lib/db.js').testConnection()"
+node -e "require('./backend/_lib/db.js').testConnection()"
 ```
 
 **완료 기준**:
@@ -617,9 +617,9 @@ node -e "require('./api/_lib/db.js').testConnection()"
 - 에러 없이 완료
 
 **수행 결과 (2025-11-26)**:
-- `api/_lib/db.js`에 `pg` Pool을 구성하고 `max:20`, `idleTimeoutMillis:30000`, `connectionTimeoutMillis:2000`, production 환경에서 SSL을 사용하는 설정을 반영했습니다.
+- `backend/_lib/db.js`에 `pg` Pool을 구성하고 `max:20`, `idleTimeoutMillis:30000`, `connectionTimeoutMillis:2000`, production 환경에서 SSL을 사용하는 설정을 반영했습니다.
 - `testConnection()` 도우미를 추가해 `SELECT NOW()` 쿼리로 연결 상태를 점검하며, idle client error 시 프로세스를 종료하도록 설정했습니다.
-- 로컬 CLI에서 `node -e "require('./api/_lib/db.js').testConnection()"`을 실행했으나, 샌드박스 환경에서 Supabase 호스트 DNS를 확인할 수 없어 `ENOTFOUND`가 발생했습니다. 실제 실행 환경(Supabase Functions 혹은 로컬 네트워크)에서 동일 스크립트를 실행하면 정상적으로 연결이 확인됩니다.
+- 로컬 CLI에서 `node -e "require('./backend/_lib/db.js').testConnection()"`을 실행했으나, 샌드박스 환경에서 Supabase 호스트 DNS를 확인할 수 없어 `ENOTFOUND`가 발생했습니다. 실제 실행 환경(Supabase Functions 혹은 로컬 네트워크)에서 동일 스크립트를 실행하면 정상적으로 연결이 확인됩니다.
 
 ---
 
@@ -628,9 +628,9 @@ node -e "require('./api/_lib/db.js').testConnection()"
 **예상 시간**: 30분
 
 **완료 조건**:
-- [x] CORS 미들웨어 (`api/_lib/middleware/cors.js`)
-- [x] 에러 핸들러 미들웨어 (`api/_lib/middleware/errorHandler.js`)
-- [x] 요청 로깅 미들웨어 (`api/_lib/middleware/logger.js`)
+- [x] CORS 미들웨어 (`backend/_lib/middleware/cors.js`)
+- [x] 에러 핸들러 미들웨어 (`backend/_lib/middleware/errorHandler.js`)
+- [x] 요청 로깅 미들웨어 (`backend/_lib/middleware/logger.js`)
 - [x] 미들웨어 테스트 (간단한 서버로 검증)
 
 **의존성**:
@@ -639,7 +639,7 @@ node -e "require('./api/_lib/db.js').testConnection()"
 **구현 파일**:
 
 ```javascript
-// api/_lib/middleware/cors.js
+// backend/_lib/middleware/cors.js
 const cors = require('cors');
 
 const corsOptions = {
@@ -654,7 +654,7 @@ module.exports = cors(corsOptions);
 ```
 
 ```javascript
-// api/_lib/middleware/errorHandler.js
+// backend/_lib/middleware/errorHandler.js
 function errorHandler(err, req, res, next) {
   console.error('Error:', err);
 
@@ -674,7 +674,7 @@ module.exports = errorHandler;
 ```
 
 ```javascript
-// api/_lib/middleware/logger.js
+// backend/_lib/middleware/logger.js
 function logger(req, res, next) {
   const start = Date.now();
 
@@ -690,8 +690,8 @@ module.exports = logger;
 ```
 
 **수행 결과 (2025-11-26)**:
-- `api/_lib/middleware/cors.js`, `errorHandler.js`, `logger.js`를 생성하고, 2-PRD의 `NFR-007: CORS 정책`을 반영해 Production/개발 허용 도메인을 분기했습니다.
-- `api/index.js`에 공통 미들웨어를 연결하고 `/error-check` 데모 라우트를 추가하여 에러 핸들러의 응답 형식을 검증했습니다.
+- `backend/_lib/middleware/cors.js`, `errorHandler.js`, `logger.js`를 생성하고, 2-PRD의 `NFR-007: CORS 정책`을 반영해 Production/개발 허용 도메인을 분기했습니다.
+- `backend/index.js`에 공통 미들웨어를 연결하고 `/error-check` 데모 라우트를 추가하여 에러 핸들러의 응답 형식을 검증했습니다.
 - `node -e "...` 스크립트로 서버를 임시 구동해 `/health`, `/error-check` 라우트를 호출하면서 로그 출력 및 에러 처리 동작을 확인했습니다 (콘솔 로그에 200/500 응답 및 스택 출력이 남습니다).
 
 ---
@@ -701,7 +701,7 @@ module.exports = logger;
 **예상 시간**: 30분
 
 **완료 조건**:
-- [ ] `api/_lib/utils/jwt.js` 파일 생성
+- [ ] `backend/_lib/utils/jwt.js` 파일 생성
 - [ ] Access Token 생성 함수
 - [ ] Refresh Token 생성 함수
 - [ ] 토큰 검증 함수
@@ -713,7 +713,7 @@ module.exports = logger;
 
 **구현 코드**:
 ```javascript
-// api/_lib/utils/jwt.js
+// backend/_lib/utils/jwt.js
 const jwt = require('jsonwebtoken');
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'access-secret-key';
@@ -765,7 +765,7 @@ module.exports = {
 **검증 스크립트**:
 ```javascript
 // test-jwt.js
-const { generateAccessToken, verifyAccessToken } = require('./api/_lib/utils/jwt');
+const { generateAccessToken, verifyAccessToken } = require('./backend/_lib/utils/jwt');
 
 const payload = { userId: 'test-123', email: 'test@example.com' };
 const token = generateAccessToken(payload);
@@ -784,7 +784,7 @@ console.log('Decoded:', decoded);
 **예상 시간**: 15분
 
 **완료 조건**:
-- [ ] `api/_lib/utils/bcrypt.js` 파일 생성
+- [ ] `backend/_lib/utils/bcrypt.js` 파일 생성
 - [ ] 비밀번호 해싱 함수
 - [ ] 비밀번호 검증 함수
 - [ ] Salt rounds 설정 (10)
@@ -795,7 +795,7 @@ console.log('Decoded:', decoded);
 
 **구현 코드**:
 ```javascript
-// api/_lib/utils/bcrypt.js
+// backend/_lib/utils/bcrypt.js
 const bcrypt = require('bcrypt');
 
 const SALT_ROUNDS = 10;
@@ -821,7 +821,7 @@ module.exports = {
 **예상 시간**: 40분
 
 **완료 조건**:
-- [ ] `api/_lib/repositories/userRepository.js` 파일 생성
+- [ ] `backend/_lib/repositories/userRepository.js` 파일 생성
 - [ ] `createUser()` - 회원가입
 - [ ] `findUserByEmail()` - 이메일로 사용자 조회
 - [ ] `findUserById()` - ID로 사용자 조회
@@ -835,7 +835,7 @@ module.exports = {
 
 **구현 코드**:
 ```javascript
-// api/_lib/repositories/userRepository.js
+// backend/_lib/repositories/userRepository.js
 const { pool } = require('../db');
 
 async function createUser({ email, passwordHash, nickname }) {
@@ -912,7 +912,7 @@ module.exports = {
 **예상 시간**: 50분
 
 **완료 조건**:
-- [ ] `api/_lib/services/authService.js` 파일 생성
+- [ ] `backend/_lib/services/authService.js` 파일 생성
 - [ ] `signup()` - 회원가입 비즈니스 로직
 - [ ] `login()` - 로그인 비즈니스 로직
 - [ ] `refresh()` - 토큰 갱신 비즈니스 로직
@@ -926,7 +926,7 @@ module.exports = {
 
 **구현 코드**:
 ```javascript
-// api/_lib/services/authService.js
+// backend/_lib/services/authService.js
 const userRepository = require('../repositories/userRepository');
 const { hashPassword, comparePassword } = require('../utils/bcrypt');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/jwt');
@@ -1057,10 +1057,10 @@ module.exports = {
 **예상 시간**: 40분
 
 **완료 조건**:
-- [ ] `POST /api/auth/signup` 엔드포인트
-- [ ] `POST /api/auth/login` 엔드포인트
-- [ ] `POST /api/auth/logout` 엔드포인트
-- [ ] `POST /api/auth/refresh` 엔드포인트
+- [ ] `POST /backend/auth/signup` 엔드포인트
+- [ ] `POST /backend/auth/login` 엔드포인트
+- [ ] `POST /backend/auth/logout` 엔드포인트
+- [ ] `POST /backend/auth/refresh` 엔드포인트
 - [ ] 요청/응답 검증
 - [ ] 에러 핸들링
 - [ ] Postman/Thunder Client 테스트 통과
@@ -1070,7 +1070,7 @@ module.exports = {
 
 **구현 파일**:
 ```javascript
-// api/auth/signup.js (Vercel Serverless Function)
+// backend/auth/signup.js (Vercel Serverless Function)
 const authService = require('../_lib/services/authService');
 const corsMiddleware = require('../_lib/middleware/cors');
 const errorHandler = require('../_lib/middleware/errorHandler');
@@ -1106,7 +1106,7 @@ module.exports = async (req, res) => {
 ```
 
 ```javascript
-// api/auth/login.js
+// backend/auth/login.js
 const authService = require('../_lib/services/authService');
 const corsMiddleware = require('../_lib/middleware/cors');
 const errorHandler = require('../_lib/middleware/errorHandler');
@@ -1140,7 +1140,7 @@ module.exports = async (req, res) => {
 ```
 
 ```javascript
-// api/auth/refresh.js
+// backend/auth/refresh.js
 const authService = require('../_lib/services/authService');
 const corsMiddleware = require('../_lib/middleware/cors');
 const errorHandler = require('../_lib/middleware/errorHandler');
@@ -1176,17 +1176,17 @@ module.exports = async (req, res) => {
 **테스트 시나리오**:
 ```bash
 # 1. 회원가입
-curl -X POST http://localhost:3000/api/auth/signup \
+curl -X POST http://localhost:3000/backend/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123","nickname":"테스터"}'
 
 # 2. 로그인
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:3000/backend/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}'
 
 # 3. 토큰 갱신
-curl -X POST http://localhost:3000/api/auth/refresh \
+curl -X POST http://localhost:3000/backend/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{"refreshToken":"[REFRESH_TOKEN]"}'
 ```
@@ -1200,7 +1200,7 @@ curl -X POST http://localhost:3000/api/auth/refresh \
 **예상 시간**: 60분
 
 **완료 조건**:
-- [ ] `api/_lib/repositories/todoRepository.js` 파일 생성
+- [ ] `backend/_lib/repositories/todoRepository.js` 파일 생성
 - [ ] `createTodo()` - 할일 생성
 - [ ] `findTodosByUserId()` - 사용자 할일 목록 조회 (필터, 정렬)
 - [ ] `findTodoById()` - 할일 상세 조회
@@ -1216,7 +1216,7 @@ curl -X POST http://localhost:3000/api/auth/refresh \
 
 **구현 코드** (일부):
 ```javascript
-// api/_lib/repositories/todoRepository.js
+// backend/_lib/repositories/todoRepository.js
 const { pool } = require('../db');
 
 async function createTodo({ userId, title, description, priority, dueDate, memo }) {
@@ -1382,7 +1382,7 @@ module.exports = {
 **예상 시간**: 20분
 
 **완료 조건**:
-- [ ] `api/_lib/middleware/auth.js` 파일 생성
+- [ ] `backend/_lib/middleware/auth.js` 파일 생성
 - [ ] Authorization 헤더 검증
 - [ ] Access Token 검증
 - [ ] `req.user` 객체 설정
@@ -1393,7 +1393,7 @@ module.exports = {
 
 **구현 코드**:
 ```javascript
-// api/_lib/middleware/auth.js
+// backend/_lib/middleware/auth.js
 const { verifyAccessToken } = require('../utils/jwt');
 
 function authMiddleware(req, res, next) {
@@ -1442,7 +1442,7 @@ module.exports = authMiddleware;
 **예상 시간**: 40분
 
 **완료 조건**:
-- [ ] `api/_lib/services/todoService.js` 파일 생성
+- [ ] `backend/_lib/services/todoService.js` 파일 생성
 - [ ] `createTodo()` - 비즈니스 로직
 - [ ] `getTodos()` - 필터링/정렬 로직
 - [ ] `getTodoById()` - 권한 검증
@@ -1457,7 +1457,7 @@ module.exports = authMiddleware;
 
 **구현 코드** (일부):
 ```javascript
-// api/_lib/services/todoService.js
+// backend/_lib/services/todoService.js
 const todoRepository = require('../repositories/todoRepository');
 
 async function createTodo(userId, todoData) {
@@ -1592,13 +1592,13 @@ module.exports = {
 **예상 시간**: 60분
 
 **완료 조건**:
-- [ ] `GET /api/todos` - 목록 조회
-- [ ] `POST /api/todos` - 생성
-- [ ] `GET /api/todos/:id` - 상세 조회
-- [ ] `PUT /api/todos/:id` - 수정
-- [ ] `PATCH /api/todos/:id/complete` - 완료
-- [ ] `PATCH /api/todos/:id/restore` - 복원
-- [ ] `DELETE /api/todos/:id` - 삭제
+- [ ] `GET /backend/todos` - 목록 조회
+- [ ] `POST /backend/todos` - 생성
+- [ ] `GET /backend/todos/:id` - 상세 조회
+- [ ] `PUT /backend/todos/:id` - 수정
+- [ ] `PATCH /backend/todos/:id/complete` - 완료
+- [ ] `PATCH /backend/todos/:id/restore` - 복원
+- [ ] `DELETE /backend/todos/:id` - 삭제
 - [ ] 모든 엔드포인트에 인증 미들웨어 적용
 - [ ] API 테스트 (Postman)
 
@@ -1607,7 +1607,7 @@ module.exports = {
 
 **구현 파일** (예시):
 ```javascript
-// api/todos/index.js
+// backend/todos/index.js
 const todoService = require('../_lib/services/todoService');
 const authMiddleware = require('../_lib/middleware/auth');
 const corsMiddleware = require('../_lib/middleware/cors');
@@ -1652,8 +1652,8 @@ module.exports = async (req, res) => {
 **예상 시간**: 30분
 
 **완료 조건**:
-- [ ] `GET /api/trash` - 휴지통 조회
-- [ ] `DELETE /api/trash/:id` - 영구 삭제
+- [ ] `GET /backend/trash` - 휴지통 조회
+- [ ] `DELETE /backend/trash/:id` - 영구 삭제
 - [ ] 30일 경과 할일 자동 삭제 로직 (스케줄러)
 - [ ] API 테스트
 
@@ -1667,8 +1667,8 @@ module.exports = async (req, res) => {
 **예상 시간**: 30분
 
 **완료 조건**:
-- [ ] `GET /api/users/me` - 프로필 조회
-- [ ] `PUT /api/users/me` - 프로필 수정 (닉네임, 프로필 사진)
+- [ ] `GET /backend/users/me` - 프로필 조회
+- [ ] `PUT /backend/users/me` - 프로필 수정 (닉네임, 프로필 사진)
 - [ ] 알림 설정 변경 기능
 - [ ] API 테스트
 
@@ -1682,7 +1682,7 @@ module.exports = async (req, res) => {
 **예상 시간**: 20분
 
 **완료 조건**:
-- [ ] `GET /api/calendar/holidays` - 공휴일 조회
+- [ ] `GET /backend/calendar/holidays` - 공휴일 조회
 - [ ] 쿼리 파라미터 (year, month)
 - [ ] API 테스트
 
@@ -1887,7 +1887,7 @@ export default App;
 **예상 시간**: 30분
 
 **완료 조건**:
-- [ ] `src/api/client.js` - Axios 인스턴스
+- [ ] `src/backend/client.js` - Axios 인스턴스
 - [ ] Base URL 설정 (환경 변수)
 - [ ] 인터셉터 (요청: Authorization 헤더)
 - [ ] 인터셉터 (응답: 에러 처리, 토큰 갱신)
@@ -1898,7 +1898,7 @@ export default App;
 
 **구현 코드**:
 ```javascript
-// src/api/client.js
+// src/backend/client.js
 import axios from 'axios';
 
 const client = axios.create({
@@ -1967,7 +1967,7 @@ export default client;
 **예상 시간**: 20분
 
 **완료 조건**:
-- [ ] `src/api/authApi.js` 파일 생성
+- [ ] `src/backend/authApi.js` 파일 생성
 - [ ] `signup()` 함수
 - [ ] `login()` 함수
 - [ ] `logout()` 함수
@@ -1978,7 +1978,7 @@ export default client;
 
 **구현 코드**:
 ```javascript
-// src/api/authApi.js
+// src/backend/authApi.js
 import client from './client';
 
 export async function signup({ email, password, nickname }) {
@@ -2017,7 +2017,7 @@ export async function refresh(refreshToken) {
 **예상 시간**: 25분
 
 **완료 조건**:
-- [ ] `src/api/todoApi.js` 파일 생성
+- [ ] `src/backend/todoApi.js` 파일 생성
 - [ ] `getTodos()` - 목록 조회
 - [ ] `createTodo()` - 생성
 - [ ] `getTodoById()` - 상세 조회
@@ -2030,7 +2030,7 @@ export async function refresh(refreshToken) {
 
 **구현 코드**:
 ```javascript
-// src/api/todoApi.js
+// src/backend/todoApi.js
 import client from './client';
 
 export async function getTodos({ status, sortBy, order } = {}) {
@@ -2089,7 +2089,7 @@ export async function deleteTodo(id) {
 ```javascript
 // src/store/auth.store.js
 import { create } from 'zustand';
-import * as authApi from '../api/authApi';
+import * as authApi from '../backend/authApi';
 
 const useAuthStore = create((set) => ({
   user: null,
@@ -2169,7 +2169,7 @@ export default useAuthStore;
 ```javascript
 // src/store/todo.store.js
 import { create } from 'zustand';
-import * as todoApi from '../api/todoApi';
+import * as todoApi from '../backend/todoApi';
 
 const useTodoStore = create((set, get) => ({
   todos: [],
@@ -2971,7 +2971,7 @@ vercel --prod
 
 ### 리스크 2: API 통합 오류
 **대응**:
-- 모킹 서버(`mockup/server.js`) 먼저 구현하여 프론트엔드 병렬 개발
+- 모킹 서버(`frontend/server.js`) 먼저 구현하여 프론트엔드 병렬 개발
 - Postman Collection 작성하여 API 테스트 자동화
 
 ### 리스크 3: 배포 실패
