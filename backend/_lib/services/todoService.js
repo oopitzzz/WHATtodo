@@ -94,6 +94,22 @@ async function deleteTodo(userId, todoId) {
   return deleted;
 }
 
+async function restoreTodo(userId, todoId, status = 'ACTIVE') {
+  const restored = await todoRepository.restoreTodo(todoId, userId, status);
+  if (!restored) {
+    throw createError('복원할 할일을 찾을 수 없습니다', 404, 'TODO_NOT_FOUND');
+  }
+  return restored;
+}
+
+async function permanentlyDeleteTodo(userId, todoId) {
+  const deleted = await todoRepository.permanentlyDeleteTodo(todoId, userId);
+  if (!deleted) {
+    throw createError('영구 삭제 조건을 만족하는 할일이 없습니다', 404, 'TODO_PERMANENT_NOT_ALLOWED');
+  }
+  return deleted;
+}
+
 function __setRepository(mockRepository) {
   todoRepository = mockRepository || require('../repositories/todoRepository');
 }
@@ -105,5 +121,7 @@ module.exports = {
   updateTodo,
   completeTodo,
   deleteTodo,
+  restoreTodo,
+  permanentlyDeleteTodo,
   __setRepository,
 };

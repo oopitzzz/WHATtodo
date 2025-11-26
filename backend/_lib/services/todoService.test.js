@@ -9,6 +9,8 @@ function createMockRepo(overrides = {}) {
     updateTodo: async () => ({ todo_id: 'todo-1', title: 'updated' }),
     completeTodo: async () => ({ todo_id: 'todo-1', status: 'COMPLETED' }),
     deleteTodo: async () => ({ todo_id: 'todo-1', status: 'DELETED' }),
+    restoreTodo: async () => ({ todo_id: 'todo-1', status: 'ACTIVE' }),
+    permanentlyDeleteTodo: async () => true,
     ...overrides,
   };
 }
@@ -92,6 +94,38 @@ async function testCompleteTodoConflict() {
   assert.strictEqual(error.code, 'TODO_ALREADY_COMPLETED');
 }
 
+async function testRestoreTodo() {
+  let restoreCalled = false;
+  todoService.__setRepository(
+    createMockRepo({
+      restoreTodo: async () => {
+        restoreCalled = true;
+        return { todo_id: 'todo-1', status: 'ACTIVE' };
+      },
+    })
+  );
+
+  const restored = await todoService.restoreTodo('user-1', 'todo-1');
+  assert(restoreCalled);
+  assert.strictEqual(restored.status, 'ACTIVE');
+}
+
+async function testPermanentlyDeleteRestriction() {
+  todoService.__setRepository(
+    createMockRepo({
+      permanentlyDeleteTodo: async () => false,
+    })
+  );
+  let error = null;
+  try {
+    await todoService.permanentlyDeleteTodo('user-1', 'todo-1');
+  } catch (err) {
+    error = err;
+  }
+  assert(error);
+  assert.strictEqual(error.code, 'TODO_PERMANENT_NOT_ALLOWED');
+}
+
 async function run() {
   try {
     await testCreateTodoValidation();
@@ -99,6 +133,8 @@ async function run() {
     await testGetTodoByIdNotFound();
     await testUpdateTodoSuccess();
     await testCompleteTodoConflict();
+    await testRestoreTodo();
+    await testPermanentlyDeleteRestriction();
     console.log('todo service tests passed');
   } catch (error) {
     console.error(error);
