@@ -35,38 +35,38 @@ function buildTodoRouter({ authMiddleware = defaultAuthMiddleware, todoService =
     }
   });
 
-  router.get('/:todoId', async (req, res, next) => {
+  router.get('/:id', async (req, res, next) => {
     try {
-      const todo = await todoService.getTodoById(req.user.userId, req.params.todoId);
+      const todo = await todoService.getTodoById(req.user.userId, req.params.id);
       res.json({ data: todo });
     } catch (error) {
       next(error);
     }
   });
 
-  router.put('/:todoId', async (req, res, next) => {
+  router.put('/:id', async (req, res, next) => {
     try {
-      const updated = await todoService.updateTodo(req.user.userId, req.params.todoId, req.body || {});
+      const updated = await todoService.updateTodo(req.user.userId, req.params.id, req.body || {});
       res.json({ data: updated });
     } catch (error) {
       next(error);
     }
   });
 
-  router.patch('/:todoId/complete', async (req, res, next) => {
+  router.patch('/:id/complete', async (req, res, next) => {
     try {
-      const completed = await todoService.completeTodo(req.user.userId, req.params.todoId);
+      const completed = await todoService.completeTodo(req.user.userId, req.params.id);
       res.json({ data: completed });
     } catch (error) {
       next(error);
     }
   });
 
-  router.patch('/:todoId/restore', async (req, res, next) => {
+  router.patch('/:id/restore', async (req, res, next) => {
     try {
       const restored = await todoService.restoreTodo(
         req.user.userId,
-        req.params.todoId,
+        req.params.id,
         req.body?.status || 'ACTIVE'
       );
       res.json({ data: restored });
@@ -75,9 +75,9 @@ function buildTodoRouter({ authMiddleware = defaultAuthMiddleware, todoService =
     }
   });
 
-  router.delete('/:todoId', async (req, res, next) => {
+  router.delete('/:id', async (req, res, next) => {
     try {
-      const deleted = await todoService.deleteTodo(req.user.userId, req.params.todoId);
+      const deleted = await todoService.deleteTodo(req.user.userId, req.params.id);
       res.json({ data: deleted });
     } catch (error) {
       next(error);

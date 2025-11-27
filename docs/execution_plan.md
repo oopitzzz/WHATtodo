@@ -1573,11 +1573,21 @@ module.exports = buildTodoRouter;
 module.exports.default = buildTodoRouter();
 ```
 
-**수행 결과 (2025-11-26)**:
-- `backend/todos/index.js`에서 인증 미들웨어가 선행된 Express Router를 구성해 CRUD + 완료/복원 엔드포인트를 구현했습니다. Router는 DI가 가능해 테스트에서 목킹할 수 있습니다.
-- `backend/index.js`에 `app.use('/api/todos', createTodoRouter())`를 추가해 실제 서버에 라우터를 장착했습니다.
-- `backend/todos/todos.test.js`에서 Express 앱을 임시로 띄워 GET/POST 엔드포인트를 호출해 동작을 검증했습니다 (`cd backend && node todos/todos.test.js`).
-- 추가로 `todoService`에 복원 및 영구 삭제 로직을 구현하고 해당 테스트 (`backend/_lib/services/todoService.test.js`)도 갱신했습니다.
+**수행 결과 (2025-11-27)**:
+- `backend/todos/index.js`에서 인증 미들웨어가 선행된 Express Router를 구성해 CRUD + 완료/복원 엔드포인트를 모두 구현했습니다:
+  - `GET /api/todos` - 필터/정렬 옵션과 함께 목록 조회
+  - `POST /api/todos` - 새 할일 생성 (상태코드 201)
+  - `GET /api/todos/:id` - 개별 할일 상세 조회
+  - `PUT /api/todos/:id` - 할일 정보 수정
+  - `PATCH /api/todos/:id/complete` - 할일 완료 처리
+  - `PATCH /api/todos/:id/restore` - 삭제된 할일 복원
+  - `DELETE /api/todos/:id` - 할일 삭제 (휴지통 이동)
+- Router는 DI가 가능해 테스트에서 authMiddleware와 todoService를 목킹할 수 있습니다.
+- `backend/index.js`에 `app.use('/api/todos', createTodoRouter())`를 등록해 서버에 라우터를 장착했습니다.
+- 모든 엔드포인트는 `authMiddleware`를 통해 Access Token 검증 후 `req.user` 객체 설정 (userId, email)을 수행합니다.
+- `backend/todos/todos.test.js`에서 Express 앱을 임시로 띄워 모든 엔드포인트를 호출해 동작을 검증했습니다 (`cd backend && node todos/todos.test.js` - "todo routes tests passed").
+- Swagger 스펙 (`/api/todos/{id}`)과 일치시키기 위해 경로 파라미터를 `:todoId`에서 `:id`로 변경했습니다.
+- `backend/_lib/services/todoService.js`에 복원(`restoreTodo`) 및 영구 삭제(`permanentlyDeleteTodo`) 로직을 구현하고 각각의 비즈니스 로직 검증을 수행합니다.
 
 ---
 
