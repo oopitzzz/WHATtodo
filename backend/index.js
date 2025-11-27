@@ -21,6 +21,8 @@ const logoutHandler = require('./auth/logout');
 const refreshHandler = require('./auth/refresh');
 const createTodoRouter = require('./todos');
 const createTrashRouter = require('./trash');
+const createUsersRouter = require('./users');
+const createCalendarRouter = require('./calendar');
 
 app.post('/api/auth/signup', signupHandler);
 app.post('/api/auth/login', loginHandler);
@@ -32,6 +34,12 @@ app.use('/api/todos', todoRouter);
 
 const trashRouter = createTrashRouter();
 app.use('/api/trash', trashRouter);
+
+const usersRouter = createUsersRouter();
+app.use('/api/users', usersRouter);
+
+const calendarRouter = createCalendarRouter();
+app.use('/api/calendar', calendarRouter);
 
 // Example route to demonstrate error handler wiring
 app.get('/error-check', (_req, res, next) => {

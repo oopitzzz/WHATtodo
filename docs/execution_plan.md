@@ -1674,13 +1674,20 @@ module.exports.default = buildTrashRouter();
 **예상 시간**: 30분
 
 **완료 조건**:
-- [ ] `GET /backend/users/me` - 프로필 조회
-- [ ] `PUT /backend/users/me` - 프로필 수정 (닉네임, 프로필 사진)
-- [ ] 알림 설정 변경 기능
-- [ ] API 테스트
+- [x] `GET /api/users/me` - 프로필 조회
+- [x] `PUT /api/users/me` - 프로필 수정 (닉네임, 프로필 사진)
+- [x] 알림 설정 변경 기능
+- [x] API 테스트
 
 **의존성**:
 - BE-6, BE-10 완료 필수
+
+**수행 결과 (2025-11-27)**:
+- `backend/_lib/services/userService.js` - getProfile, updateProfile 구현
+- `backend/users/index.js` - 2개 엔드포인트 (GET/PUT /api/users/me) 라우터 구현
+- `backend/users/users.test.js` - 간단한 라우터 테스트 (GET, PUT 엔드포인트 검증)
+- `backend/index.js`에 users 라우터 등록
+- userRepository의 findUserById, updateUser를 활용한 프로필 조회/수정
 
 ---
 
@@ -1689,12 +1696,20 @@ module.exports.default = buildTrashRouter();
 **예상 시간**: 20분
 
 **완료 조건**:
-- [ ] `GET /backend/calendar/holidays` - 공휴일 조회
-- [ ] 쿼리 파라미터 (year, month)
-- [ ] API 테스트
+- [x] `GET /api/calendar/holidays` - 공휴일 조회
+- [x] 쿼리 파라미터 (year, month)
+- [x] API 테스트
 
 **의존성**:
 - BE-2, DB-6 완료 필수
+
+**수행 결과 (2025-11-27)**:
+- `backend/_lib/repositories/calendarRepository.js` - getHolidaysByYearMonth, getHolidaysByYear 구현
+- `backend/_lib/services/calendarService.js` - getHolidays 로직 (year/month 기본값 처리)
+- `backend/calendar/index.js` - GET /api/calendar/holidays 라우터 (year, month 쿼리 지원)
+- `backend/calendar/calendar.test.js` - 간단한 테스트 (year 파라미터, year+month 파라미터 검증)
+- `backend/index.js`에 calendar 라우터 등록
+- 응답 형식: Holiday 배열 (date, holiday_name, description)
 
 ---
 
