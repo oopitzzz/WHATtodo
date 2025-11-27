@@ -1,18 +1,15 @@
-const assert = require('assert');
 const { hashPassword, comparePassword } = require('./bcrypt');
 
-async function runTests() {
-  const plain = 'Password123!';
-  const hash = await hashPassword(plain);
-  assert.ok(hash.startsWith('$2b$'), 'hashed password should start with bcrypt prefix');
+describe('bcrypt utils', () => {
+  it('should hash and verify password', async () => {
+    const plain = 'Password123!';
+    const hash = await hashPassword(plain);
+    expect(hash.startsWith('$2b$')).toBe(true);
 
-  const isMatch = await comparePassword(plain, hash);
-  assert.strictEqual(isMatch, true, 'password should match');
+    const isMatch = await comparePassword(plain, hash);
+    expect(isMatch).toBe(true);
 
-  const mismatch = await comparePassword('WrongPassword', hash);
-  assert.strictEqual(mismatch, false, 'password should not match');
-
-  console.log('bcrypt util tests passed');
-}
-
-runTests();
+    const mismatch = await comparePassword('WrongPassword', hash);
+    expect(mismatch).toBe(false);
+  });
+});

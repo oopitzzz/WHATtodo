@@ -3,6 +3,8 @@ const express = require('express');
 const corsMiddleware = require('./_lib/middleware/cors');
 const loggerMiddleware = require('./_lib/middleware/logger');
 const errorHandler = require('./_lib/middleware/errorHandler');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('../swagger-ko.json');  // 한글 문서
 
 const app = express();
 
@@ -31,6 +33,8 @@ app.post('/api/auth/refresh', refreshHandler);
 
 const todoRouter = createTodoRouter();
 app.use('/api/todos', todoRouter);
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const trashRouter = createTrashRouter();
 app.use('/api/trash', trashRouter);

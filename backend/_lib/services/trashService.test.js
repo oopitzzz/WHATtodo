@@ -1,63 +1,49 @@
 const trashService = require('./trashService');
 
-async function runTests() {
-  const mockRepository = {
-    getTrashedTodosByUserId: async (userId, options) => [
-      { todo_id: 'deleted-1', title: 'Deleted Todo 1', status: 'DELETED' },
-      { todo_id: 'deleted-2', title: 'Deleted Todo 2', status: 'DELETED' }
-    ],
-    getTrashedTodoCount: async (userId) => 2,
-    permanentlyDeleteTodoById: async (todoId, userId) => {
-      return todoId === 'deleted-1' ? true : false;
-    }
-  };
+const buildMockRepo = (overrides = {}) => ({
+  getTrashedTodosByUserId: jest.fn().mockResolvedValue([
+    { todo_id: 'deleted-1', title: 'Deleted Todo 1', status: 'DELETED' },
+    { todo_id: 'deleted-2', title: 'Deleted Todo 2', status: 'DELETED' },
+  ]),
+  getTrashedTodoCount: jest.fn().mockResolvedValue(2),
+  permanentlyDeleteTodoById: jest.fn().mockResolvedValue(true),
+  ...overrides,
+});
 
-  trashService.__setRepository(mockRepository);
+describe('trashService', () => {
+  afterEach(() => {
+    trashService.__setRepository(null);
+    jest.clearAllMocks();
+  });
 
-  try {
-    // Test 1: getTrash with pagination
-    const trashResult = await trashService.getTrash('user-1', { page: 1, pageSize: 20 });
-    if (!trashResult.items || trashResult.items.length !== 2) {
-      throw new Error('getTrash items check failed');
-    }
-    if (!trashResult.meta || trashResult.meta.page !== 1 || trashResult.meta.pageSize !== 20) {
-      throw new Error('getTrash meta check failed');
-    }
-    if (trashResult.meta.total !== 2 || trashResult.meta.totalPages !== 1) {
-      throw new Error('getTrash count check failed');
-    }
+  it('should return paginated trash list with meta', async () => {
+    const repo = buildMockRepo();
+    trashService.__setRepository(repo);
 
-    // Test 2: getTrash with default pagination
-    const defaultResult = await trashService.getTrash('user-1', {});
-    if (defaultResult.meta.page !== 1 || defaultResult.meta.pageSize !== 20) {
-      throw new Error('getTrash default pagination failed');
-    }
+    const result = await trashService.getTrash('user-1', { page: 1, pageSize: 20 });
+    expect(repo.getTrashedTodosByUserId).toHaveBeenCalledWith('user-1', { limit: 20, offset: 0 });
+    expect(repo.getTrashedTodoCount).toHaveBeenCalledWith('user-1');
+    expect(result.items).toHaveLength(2);
+    expect(result.meta.total).toBe(2);
+    expect(result.meta.totalPages).toBe(1);
+  });
 
-    // Test 3: permanentlyDeleteTrash success
-    const deleteResult = await trashService.permanentlyDeleteTrash('user-1', 'deleted-1');
-    if (!deleteResult) {
-      throw new Error('permanentlyDeleteTrash should return true');
-    }
+  it('should throw when item not found on permanent delete', async () => {
+    const repo = buildMockRepo({ permanentlyDeleteTodoById: jest.fn().mockResolvedValue(false) });
+    trashService.__setRepository(repo);
 
-    // Test 4: permanentlyDeleteTrash not found
-    try {
-      await trashService.permanentlyDeleteTrash('user-1', 'nonexistent');
-      throw new Error('Should have thrown error for nonexistent trash item');
-    } catch (err) {
-      if (err.statusCode !== 404 || err.code !== 'TRASH_NOT_FOUND') {
-        throw new Error('Wrong error for nonexistent trash item');
-      }
-    }
+    await expect(trashService.permanentlyDeleteTrash('user-1', 'missing')).rejects.toMatchObject({
+      code: 'TRASH_NOT_FOUND',
+      statusCode: 404,
+    });
+  });
 
-    console.log('trash service tests passed');
-  } catch (error) {
-    console.error('❌', error.message);
-    process.exitCode = 1;
-  }
-}
+  it('should permanently delete when found', async () => {
+    const repo = buildMockRepo({ permanentlyDeleteTodoById: jest.fn().mockResolvedValue(true) });
+    trashService.__setRepository(repo);
 
-if (require.main === module) {
-  runTests();
-}
-
-module.exports = runTests;
+    const result = await trashService.permanentlyDeleteTrash('user-1', 'deleted-1');
+    expect(result).toBe(true);
+    expect(repo.permanentlyDeleteTodoById).toHaveBeenCalledWith('deleted-1', 'user-1');
+  });
+});

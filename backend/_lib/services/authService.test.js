@@ -1,131 +1,137 @@
-const assert = require('assert');
 const authService = require('./authService');
 const userRepository = require('../repositories/userRepository');
 const bcryptUtil = require('../utils/bcrypt');
 const jwtUtil = require('../utils/jwt');
 
-const originals = {
-  findUserByEmail: userRepository.findUserByEmail,
-  createUser: userRepository.createUser,
-  findUserById: userRepository.findUserById,
-  updateLastLogin: userRepository.updateLastLogin,
-  hashPassword: bcryptUtil.hashPassword,
-  comparePassword: bcryptUtil.comparePassword,
-  generateAccessToken: jwtUtil.generateAccessToken,
-  generateRefreshToken: jwtUtil.generateRefreshToken,
-  verifyRefreshToken: jwtUtil.verifyRefreshToken,
-};
+jest.mock('../repositories/userRepository', () => ({
+  findUserByEmail: jest.fn(),
+  createUser: jest.fn(),
+  findUserById: jest.fn(),
+  updateLastLogin: jest.fn(),
+}));
 
-function mockFunctions(overrides = {}) {
-  Object.entries(overrides).forEach(([key, value]) => {
-    if (key in userRepository) userRepository[key] = value;
-    if (key in bcryptUtil) bcryptUtil[key] = value;
-    if (key in jwtUtil) jwtUtil[key] = value;
-  });
-}
+jest.mock('../utils/bcrypt', () => ({
+  hashPassword: jest.fn(),
+  comparePassword: jest.fn(),
+}));
 
-function restoreMocks() {
-  Object.entries(originals).forEach(([key, value]) => {
-    if (key in userRepository) userRepository[key] = value;
-    if (key in bcryptUtil) bcryptUtil[key] = value;
-    if (key in jwtUtil) jwtUtil[key] = value;
-  });
-}
+jest.mock('../utils/jwt', () => ({
+  generateAccessToken: jest.fn(),
+  generateRefreshToken: jest.fn(),
+  verifyRefreshToken: jest.fn(),
+}));
 
-async function testSignupSuccess() {
-  mockFunctions({
-    findUserByEmail: async () => null,
-    hashPassword: async () => 'hashed',
-    createUser: async () => ({
-      user_id: 'user-1',
-      email: 'test@example.com',
-      nickname: 'tester',
-      profile_image_url: null,
-      notification_enabled: true,
-    }),
-    generateAccessToken: () => 'access-token',
-    generateRefreshToken: () => 'refresh-token',
+describe('authService', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  const result = await authService.signup({
-    email: 'test@example.com',
-    password: 'Password123!',
-    nickname: 'tester',
-  });
+  describe('signup', () => {
+    it('should create user and return tokens', async () => {
+      userRepository.findUserByEmail.mockResolvedValue(null);
+      bcryptUtil.hashPassword.mockResolvedValue('hashed');
+      userRepository.createUser.mockResolvedValue({
+        user_id: 'user-1',
+        email: 'test@example.com',
+        nickname: 'tester',
+        profile_image_url: null,
+        notification_enabled: true,
+      });
+      jwtUtil.generateAccessToken.mockReturnValue('access');
+      jwtUtil.generateRefreshToken.mockReturnValue('refresh');
 
-  assert.strictEqual(result.user.email, 'test@example.com');
-  assert.strictEqual(result.accessToken, 'access-token');
-  assert.strictEqual(result.refreshToken, 'refresh-token');
-}
+      const result = await authService.signup({
+        email: 'test@example.com',
+        password: 'Password123!',
+        nickname: 'tester',
+      });
 
-async function testSignupDuplicateEmail() {
-  mockFunctions({
-    findUserByEmail: async () => ({ user_id: 'user-1' }),
-  });
-
-  let caught = null;
-  try {
-    await authService.signup({
-      email: 'dup@example.com',
-      password: 'Password123!',
-      nickname: 'tester',
+      expect(userRepository.createUser).toHaveBeenCalledTimes(1);
+      expect(result.user.email).toBe('test@example.com');
+      expect(result.accessToken).toBe('access');
+      expect(result.refreshToken).toBe('refresh');
     });
-  } catch (error) {
-    caught = error;
-  }
-  assert(caught, 'should throw duplicate email');
-  assert.strictEqual(caught.code, 'AUTH_EMAIL_DUPLICATE');
-}
 
-async function testLoginInvalidPassword() {
-  mockFunctions({
-    findUserByEmail: async () => ({
-      user_id: 'user-1',
-      email: 'test@example.com',
-      password_hash: 'hashed',
-    }),
-    comparePassword: async () => false,
+    it('should throw when email duplicated', async () => {
+      userRepository.findUserByEmail.mockResolvedValue({ user_id: 'user-1' });
+
+      await expect(
+        authService.signup({
+          email: 'dup@example.com',
+          password: 'Password123!',
+          nickname: 'tester',
+        })
+      ).rejects.toMatchObject({ code: 'AUTH_EMAIL_DUPLICATE', statusCode: 409 });
+    });
+
+    it('should throw when password too short', async () => {
+      userRepository.findUserByEmail.mockResolvedValue(null);
+      await expect(
+        authService.signup({
+          email: 'test@example.com',
+          password: 'short',
+          nickname: 'tester',
+        })
+      ).rejects.toMatchObject({ code: 'VALIDATION_PASSWORD_LENGTH', statusCode: 400 });
+    });
   });
 
-  let caught = null;
-  try {
-    await authService.login({ email: 'test@example.com', password: 'wrong' });
-  } catch (error) {
-    caught = error;
-  }
-  assert(caught, 'should throw invalid credentials');
-  assert.strictEqual(caught.code, 'AUTH_INVALID_CREDENTIALS');
-}
+  describe('login', () => {
+    it('should login and return tokens', async () => {
+      userRepository.findUserByEmail.mockResolvedValue({
+        user_id: 'user-1',
+        email: 'test@example.com',
+        password_hash: 'hashed',
+        nickname: 'tester',
+        profile_image_url: null,
+        notification_enabled: true,
+      });
+      bcryptUtil.comparePassword.mockResolvedValue(true);
+      jwtUtil.generateAccessToken.mockReturnValue('access');
+      jwtUtil.generateRefreshToken.mockReturnValue('refresh');
 
-async function testRefreshTokenFlow() {
-  mockFunctions({
-    verifyRefreshToken: () => ({ userId: 'user-1' }),
-    findUserById: async () => ({
-      user_id: 'user-1',
-      email: 'test@example.com',
-    }),
-    generateAccessToken: () => 'new-access',
-    generateRefreshToken: () => 'new-refresh',
+      const result = await authService.login({ email: 'test@example.com', password: 'Password123!' });
+      expect(userRepository.updateLastLogin).toHaveBeenCalledWith('user-1');
+      expect(result.accessToken).toBe('access');
+      expect(result.refreshToken).toBe('refresh');
+    });
+
+    it('should throw for invalid credentials', async () => {
+      userRepository.findUserByEmail.mockResolvedValue({
+        user_id: 'user-1',
+        email: 'test@example.com',
+        password_hash: 'hashed',
+      });
+      bcryptUtil.comparePassword.mockResolvedValue(false);
+
+      await expect(authService.login({ email: 'test@example.com', password: 'wrong' })).rejects.toMatchObject({
+        code: 'AUTH_INVALID_CREDENTIALS',
+        statusCode: 401,
+      });
+    });
   });
 
-  const result = await authService.refresh('valid-refresh');
-  assert.strictEqual(result.accessToken, 'new-access');
-  assert.strictEqual(result.refreshToken, 'new-refresh');
-}
+  describe('refresh', () => {
+    it('should issue new tokens when refresh token valid', async () => {
+      jwtUtil.verifyRefreshToken.mockReturnValue({ userId: 'user-1' });
+      userRepository.findUserById.mockResolvedValue({ user_id: 'user-1', email: 'test@example.com' });
+      jwtUtil.generateAccessToken.mockReturnValue('new-access');
+      jwtUtil.generateRefreshToken.mockReturnValue('new-refresh');
 
-async function run() {
-  try {
-    await testSignupSuccess();
-    await testSignupDuplicateEmail();
-    await testLoginInvalidPassword();
-    await testRefreshTokenFlow();
-    console.log('auth service tests passed');
-  } catch (error) {
-    console.error(error);
-    process.exitCode = 1;
-  } finally {
-    restoreMocks();
-  }
-}
+      const result = await authService.refresh('valid');
+      expect(result.accessToken).toBe('new-access');
+      expect(result.refreshToken).toBe('new-refresh');
+    });
 
-run();
+    it('should throw when refresh token invalid', async () => {
+      jwtUtil.verifyRefreshToken.mockImplementation(() => {
+        throw new Error('invalid');
+      });
+
+      await expect(authService.refresh('bad')).rejects.toMatchObject({
+        code: 'AUTH_TOKEN_EXPIRED',
+        statusCode: 401,
+      });
+    });
+  });
+});

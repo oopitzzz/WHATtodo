@@ -1,44 +1,34 @@
+jest.mock('../db', () => ({
+  pool: {
+    query: jest.fn(),
+  },
+}));
+
+const { pool } = require('../db');
 const { autoDeleteExpiredTrash } = require('./scheduler');
 
-async function runTests() {
-  try {
-    // Mock pool for testing
-    const mockPool = {
-      query: async () => ({
-        rows: [
-          { todo_id: 'expired-1' },
-          { todo_id: 'expired-2' },
-          { todo_id: 'expired-3' }
-        ]
-      })
-    };
+describe('scheduler', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-    // Test autoDeleteExpiredTrash
-    console.log('Testing autoDeleteExpiredTrash...');
+  it('should delete expired todos and return count', async () => {
+    pool.query.mockResolvedValue({ rows: [{ todo_id: 'a' }, { todo_id: 'b' }] });
 
-    // Note: In actual test, we would need to mock the db module
-    // This is a simplified test showing the expected behavior
-    const expectedResult = {
-      success: true,
-      deletedCount: 3,
-      timestamp: new Date(),
-      message: 'Successfully deleted 3 expired todos'
-    };
+    const result = await autoDeleteExpiredTrash();
 
-    if (expectedResult.success && expectedResult.deletedCount === 3) {
-      console.log('✅ scheduler tests passed');
-      console.log(`✅ Auto delete scheduler configured (deletes todos deleted > 30 days ago)`);
-    } else {
-      throw new Error('Scheduler test failed');
-    }
-  } catch (error) {
-    console.error('❌', error.message);
-    process.exitCode = 1;
-  }
-}
+    expect(pool.query).toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.deletedCount).toBe(2);
+  });
 
-if (require.main === module) {
-  runTests();
-}
+  it('should handle errors gracefully', async () => {
+    pool.query.mockRejectedValue(new Error('db error'));
 
-module.exports = runTests;
+    const result = await autoDeleteExpiredTrash();
+
+    expect(result.success).toBe(false);
+    expect(result.deletedCount).toBe(0);
+    expect(result.error).toBe('db error');
+  });
+});
