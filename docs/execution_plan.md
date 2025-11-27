@@ -1575,19 +1575,34 @@ module.exports.default = buildTodoRouter();
 
 **수행 결과 (2025-11-27)**:
 - `backend/todos/index.js`에서 인증 미들웨어가 선행된 Express Router를 구성해 CRUD + 완료/복원 엔드포인트를 모두 구현했습니다:
-  - `GET /api/todos` - 필터/정렬 옵션과 함께 목록 조회
+  - `GET /api/todos` - 필터/정렬 옵션과 함께 목록 조회 (status, priority, sortBy, sortDirection, limit, offset 지원)
   - `POST /api/todos` - 새 할일 생성 (상태코드 201)
   - `GET /api/todos/:id` - 개별 할일 상세 조회
-  - `PUT /api/todos/:id` - 할일 정보 수정
+  - `PUT /api/todos/:id` - 할일 정보 수정 (제목, 설명, 우선순위, 마감일, 메모)
   - `PATCH /api/todos/:id/complete` - 할일 완료 처리
-  - `PATCH /api/todos/:id/restore` - 삭제된 할일 복원
+  - `PATCH /api/todos/:id/restore` - 삭제된 할일 복원 (ACTIVE/COMPLETED로 복원 가능)
   - `DELETE /api/todos/:id` - 할일 삭제 (휴지통 이동)
-- Router는 DI가 가능해 테스트에서 authMiddleware와 todoService를 목킹할 수 있습니다.
+- Router는 DI(의존성 주입) 패턴으로 설계되어 테스트에서 authMiddleware와 todoService를 목킹할 수 있습니다.
 - `backend/index.js`에 `app.use('/api/todos', createTodoRouter())`를 등록해 서버에 라우터를 장착했습니다.
 - 모든 엔드포인트는 `authMiddleware`를 통해 Access Token 검증 후 `req.user` 객체 설정 (userId, email)을 수행합니다.
-- `backend/todos/todos.test.js`에서 Express 앱을 임시로 띄워 모든 엔드포인트를 호출해 동작을 검증했습니다 (`cd backend && node todos/todos.test.js` - "todo routes tests passed").
-- Swagger 스펙 (`/api/todos/{id}`)과 일치시키기 위해 경로 파라미터를 `:todoId`에서 `:id`로 변경했습니다.
-- `backend/_lib/services/todoService.js`에 복원(`restoreTodo`) 및 영구 삭제(`permanentlyDeleteTodo`) 로직을 구현하고 각각의 비즈니스 로직 검증을 수행합니다.
+- `backend/_lib/repositories/todoRepository.js`에 구현된 저장소:
+  - `createTodo()` - 새 할일 삽입
+  - `findTodosByUserId()` - 사용자의 할일 조회 (필터/정렬 지원)
+  - `findTodoById()` - 특정 할일 조회
+  - `updateTodo()` - 할일 정보 수정
+  - `completeTodo()` - 할일 완료 처리
+  - `restoreTodo()` - 삭제된 할일 복원
+  - `deleteTodo()` - 할일 삭제 (소프트 삭제)
+- `backend/_lib/services/todoService.js`에 비즈니스 로직:
+  - `getTodos()` - 필터링/정렬된 목록 조회
+  - `createTodo()` - 제목 및 마감일 검증 후 생성
+  - `getTodoById()` - 사용자 소유 여부 확인 후 조회
+  - `updateTodo()` - 부분 업데이트 지원
+  - `completeTodo()` - 완료 상태 체크 후 처리
+  - `restoreTodo()` - 삭제된 항목만 복원 가능
+  - `deleteTodo()` - 소프트 삭제 (deleted_at 설정)
+- `backend/todos/todos.test.js`에서 Express 앱을 임시로 띄워 모든 엔드포인트를 호출해 동작을 검증했습니다.
+- Swagger 스펙과 일치시키기 위해 모든 경로를 `/api/todos`로 통일했습니다.
 
 ---
 
@@ -1647,25 +1662,33 @@ module.exports.default = buildTrashRouter();
 
 **수행 결과 (2025-11-27)**:
 - `backend/_lib/repositories/todoRepository.js`에 휴지통 조회 함수 추가:
-  - `getTrashedTodosByUserId(userId, options)` - 삭제된 할일 목록 조회
+  - `getTrashedTodosByUserId(userId, options)` - 삭제된 할일 목록 조회 (필터/정렬 지원)
   - `getTrashedTodoCount(userId)` - 삭제된 할일 개수 조회
-  - `permanentlyDeleteTodoById(todoId, userId)` - 영구 삭제 (조건 없음)
+  - `permanentlyDeleteTodoById(todoId, userId)` - 영구 삭제 (deleted_at IS NOT NULL 확인)
 - `backend/_lib/services/trashService.js` 신규 구현:
-  - `getTrash(userId, options)` - 페이지네이션과 함께 휴지통 조회 ({items, meta})
-  - `permanentlyDeleteTrash(userId, todoId)` - 휴지통 항목 영구 삭제
-  - `autoDeleteExpiredTrash()` - 스케줄러용 자동 삭제 함수
+  - `getTrash(userId, options)` - 페이지네이션과 함께 휴지통 조회 ({items: [], total, page, pageSize})
+  - `permanentlyDeleteTrash(userId, todoId)` - 휴지통 항목 영구 삭제 (권한 검증)
+  - `autoDeleteExpiredTrash()` - 30일 이상 경과한 항목 자동 삭제용 함수
+  - `restoreTodoFromTrash(userId, todoId, status)` - 휴지통에서 복원 (트랜잭션 처리)
 - `backend/trash/index.js` 신규 구현:
   - DI 패턴으로 authMiddleware/trashService 주입 가능
-  - `GET /api/trash` - 페이지네이션 지원 (page, pageSize 쿼리)
-  - `DELETE /api/trash/:id` - 204 No Content 응답
+  - `GET /api/trash` - 페이지네이션 지원 (page, pageSize 쿼리, 기본값: page=1, pageSize=20)
+  - `DELETE /api/trash/:id` - 204 No Content 응답 (권한 검증 후 영구 삭제)
+  - 모든 엔드포인트에 인증 미들웨어 적용
 - `backend/_lib/utils/scheduler.js` 신규 구현:
+  - `scheduleAutoDelete(intervalMs)` - 지정된 간격(밀리초)으로 자동 삭제 실행
   - `autoDeleteExpiredTrash()` - 30일 이상 경과한 할일 자동 삭제
-  - `startAutoDeleteScheduler(intervalHours)` - 매일 자정 자동 실행 설정
-- `backend/index.js`에 trash 라우터 등록 (`app.use('/api/trash', trashRouter)`)
-- 테스트 파일 작성 및 통과:
-  - `backend/trash/trash.test.js` - 라우터 테스트 (GET, DELETE 엔드포인트)
-  - `backend/_lib/services/trashService.test.js` - 서비스 비즈니스 로직 테스트
-  - `backend/_lib/utils/scheduler.test.js` - 스케줄러 테스트
+  - 오류 발생 시 로깅하고 계속 실행 (프로세스 중단 방지)
+- `backend/index.js`에 trash 라우터 등록 및 스케줄러 시작:
+  - `app.use('/api/trash', createTrashRouter())`
+  - 서버 시작 시 `scheduleAutoDelete()` 호출 (매 60초마다 실행)
+- 통합 테스트 및 검증:
+  - `backend/trash/trash.test.js` - 라우터 테스트 (GET, DELETE 엔드포인트 검증)
+  - `backend/_lib/services/trashService.test.js` - 비즈니스 로직 테스트 (페이지네이션, 영구 삭제 검증)
+  - `backend/_lib/utils/scheduler.test.js` - 스케줄러 자동 삭제 로직 테스트
+- 추가 구현:
+  - `backend/_lib/repositories/trashRepository.js` 신규 작성 (향후 trash 데이터 별도 관리 시 확장 가능)
+  - 모든 에러는 `errorHandler` 미들웨어에서 통일된 형식으로 응답
 
 ---
 
