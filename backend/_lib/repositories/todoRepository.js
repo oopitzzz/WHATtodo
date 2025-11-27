@@ -198,6 +198,44 @@ async function permanentlyDeleteTodo(todoId, userId) {
   return rows.length > 0;
 }
 
+async function getTrashedTodosByUserId(userId, options = {}) {
+  const values = [userId];
+  const limit = Math.min(Math.max(options.limit || 20, 1), 100);
+  const offset = Math.max(options.offset || 0, 0);
+
+  const query = `
+    SELECT *
+    FROM todos
+    WHERE user_id = $1 AND deleted_at IS NOT NULL
+    ORDER BY deleted_at DESC
+    LIMIT $2
+    OFFSET $3
+  `;
+
+  const { rows } = await activePool.query(query, [userId, limit, offset]);
+  return rows;
+}
+
+async function getTrashedTodoCount(userId) {
+  const query = `
+    SELECT COUNT(*) as count
+    FROM todos
+    WHERE user_id = $1 AND deleted_at IS NOT NULL
+  `;
+  const { rows } = await activePool.query(query, [userId]);
+  return parseInt(rows[0].count, 10);
+}
+
+async function permanentlyDeleteTodoById(todoId, userId) {
+  const query = `
+    DELETE FROM todos
+    WHERE todo_id = $1 AND user_id = $2 AND deleted_at IS NOT NULL
+    RETURNING todo_id
+  `;
+  const { rows } = await activePool.query(query, [todoId, userId]);
+  return rows.length > 0;
+}
+
 function __setPool(customPool) {
   activePool = customPool || pool;
 }
@@ -215,6 +253,9 @@ module.exports = {
   deleteTodo,
   restoreTodo,
   permanentlyDeleteTodo,
+  getTrashedTodosByUserId,
+  getTrashedTodoCount,
+  permanentlyDeleteTodoById,
   __setPool,
   __resetPool,
 };

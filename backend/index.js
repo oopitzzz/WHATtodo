@@ -20,6 +20,7 @@ const loginHandler = require('./auth/login');
 const logoutHandler = require('./auth/logout');
 const refreshHandler = require('./auth/refresh');
 const createTodoRouter = require('./todos');
+const createTrashRouter = require('./trash');
 
 app.post('/api/auth/signup', signupHandler);
 app.post('/api/auth/login', loginHandler);
@@ -28,6 +29,9 @@ app.post('/api/auth/refresh', refreshHandler);
 
 const todoRouter = createTodoRouter();
 app.use('/api/todos', todoRouter);
+
+const trashRouter = createTrashRouter();
+app.use('/api/trash', trashRouter);
 
 // Example route to demonstrate error handler wiring
 app.get('/error-check', (_req, res, next) => {

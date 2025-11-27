@@ -1598,13 +1598,74 @@ module.exports.default = buildTodoRouter();
 **예상 시간**: 30분
 
 **완료 조건**:
-- [ ] `GET /backend/trash` - 휴지통 조회
-- [ ] `DELETE /backend/trash/:id` - 영구 삭제
-- [ ] 30일 경과 할일 자동 삭제 로직 (스케줄러)
-- [ ] API 테스트
+- [x] `GET /api/trash` - 휴지통 조회
+- [x] `DELETE /api/trash/:id` - 영구 삭제
+- [x] 30일 경과 할일 자동 삭제 로직 (스케줄러)
+- [x] API 테스트
 
 **의존성**:
 - BE-9, BE-10 완료 필수
+
+**구현 파일**:
+```javascript
+// backend/trash/index.js - 휴지통 라우터
+const express = require('express');
+const defaultAuthMiddleware = require('../_lib/middleware/auth');
+const defaultTrashService = require('../_lib/services/trashService');
+
+function buildTrashRouter({ authMiddleware = defaultAuthMiddleware, trashService = defaultTrashService } = {}) {
+  const router = express.Router();
+  router.use(authMiddleware);
+
+  // GET /api/trash - 휴지통 조회 (page, pageSize 쿼리)
+  router.get('/', async (req, res, next) => {
+    try {
+      const options = { page: req.query.page, pageSize: req.query.pageSize };
+      const result = await trashService.getTrash(req.user.userId, options);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // DELETE /api/trash/:id - 영구 삭제 (상태코드 204)
+  router.delete('/:id', async (req, res, next) => {
+    try {
+      await trashService.permanentlyDeleteTrash(req.user.userId, req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  return router;
+}
+
+module.exports = buildTrashRouter;
+module.exports.default = buildTrashRouter();
+```
+
+**수행 결과 (2025-11-27)**:
+- `backend/_lib/repositories/todoRepository.js`에 휴지통 조회 함수 추가:
+  - `getTrashedTodosByUserId(userId, options)` - 삭제된 할일 목록 조회
+  - `getTrashedTodoCount(userId)` - 삭제된 할일 개수 조회
+  - `permanentlyDeleteTodoById(todoId, userId)` - 영구 삭제 (조건 없음)
+- `backend/_lib/services/trashService.js` 신규 구현:
+  - `getTrash(userId, options)` - 페이지네이션과 함께 휴지통 조회 ({items, meta})
+  - `permanentlyDeleteTrash(userId, todoId)` - 휴지통 항목 영구 삭제
+  - `autoDeleteExpiredTrash()` - 스케줄러용 자동 삭제 함수
+- `backend/trash/index.js` 신규 구현:
+  - DI 패턴으로 authMiddleware/trashService 주입 가능
+  - `GET /api/trash` - 페이지네이션 지원 (page, pageSize 쿼리)
+  - `DELETE /api/trash/:id` - 204 No Content 응답
+- `backend/_lib/utils/scheduler.js` 신규 구현:
+  - `autoDeleteExpiredTrash()` - 30일 이상 경과한 할일 자동 삭제
+  - `startAutoDeleteScheduler(intervalHours)` - 매일 자정 자동 실행 설정
+- `backend/index.js`에 trash 라우터 등록 (`app.use('/api/trash', trashRouter)`)
+- 테스트 파일 작성 및 통과:
+  - `backend/trash/trash.test.js` - 라우터 테스트 (GET, DELETE 엔드포인트)
+  - `backend/_lib/services/trashService.test.js` - 서비스 비즈니스 로직 테스트
+  - `backend/_lib/utils/scheduler.test.js` - 스케줄러 테스트
 
 ---
 
