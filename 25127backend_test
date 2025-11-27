@@ -1,0 +1,144 @@
+
+  📋 상세 점검 내용
+
+  1️⃣ 드라이버 레벨
+
+  ✅ pg 패키지 (^8.16.3)
+  - PostgreSQL 공식 노드 드라이버 사용
+  - Supabase는 내부적으로 100% 호환성 있는 PostgreSQL 제공    
+  - 결론: 드라이버 교체 불필요
+
+  2️⃣ 연결 구성 (backend/_lib/db.js)
+
+  const pool = new Pool({
+    connectionString:
+  process.env.POSTGRES_CONNECTION_STRING,
+    ssl: process.env.NODE_ENV === 'production' ? {
+  rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  });
+
+  호환성 점검:
+  - ✅ 표준 PostgreSQL 연결 문자열 지원
+  - ✅ SSL 설정 (Supabase는 반드시 SSL 필요 → 프로덕션에서    
+   동작)
+  - ✅ 커넥션 풀 설정 (표준 pg 라이브러리 방식)
+  - ✅ DNS 설정 (test-connection.js에서 IPv4 우선 설정)       
+
+  3️⃣ SQL 문법 호환성
+
+  사용 중인 PostgreSQL 기능들:
+
+  | 기능                | 사용 처                 |
+  PostgreSQL | Supabase | 상태  |
+  |-------------------|----------------------|------------    
+  |----------|-----|
+  | UUID 타입           | users.user_id        | ✅
+     | ✅        | 호환  |
+  | ENUM 타입           | priority, status     | ✅
+     | ✅        | 호환  |
+  | ILIKE (대소문자 무시)   | todoRepository.js:37 | ✅       
+         | ✅        | 호환  |
+  | CURRENT_TIMESTAMP | 전체                   | ✅
+     | ✅        | 호환  |
+  | 매개변수 바인딩 ($1, $2) | 전체                   | ✅    
+            | ✅        | 호환  |
+  | 인덱싱               | 전체                   | ✅        
+        | ✅        | 호환  |
+
+  4️⃣ 저장소 레이어 호환성
+
+  // userRepository.js, todoRepository.js,
+  calendarRepository.js
+  const { pool } = require('../db');
+  let activePool = pool;
+
+  function setPool(customPool) {
+    activePool = customPool || pool;
+  }
+
+  await activePool.query(query, values);
+
+  호환성 특징:
+  - ✅ 풀 추상화: 테스트용 커스텀 풀 주입 가능
+  - ✅ PostgreSQL API 직접 사용
+  - ✅ Supabase는 표준 PostgreSQL 드라이버 호환
+
+  5️⃣ 현재 설정 상태
+
+  backend/test-connection.js에서 확인:
+  - Supabase 연결 주소:
+  db.dqhvtmphokkfocxeyjur.supabase.co:5432
+  - DNS 설정: IPv4 우선
+  (dns.setDefaultResultOrder('ipv4first'))
+
+  ---
+  ⚠️ 주의사항
+
+  1. SSL 설정
+
+  ssl: process.env.NODE_ENV === 'production' ? {
+  rejectUnauthorized: false } : false,
+  - 로컬 개발: SSL 비활성화 ✅
+  - Supabase 프로덕션: SSL 필수 ✅
+  - 로컬 PostgreSQL 프로덕션: SSL 설정 검토 필요
+
+  2. 환경변수 설정
+
+  POSTGRES_CONNECTION_STRING=postgresql://user:password@ho    
+  st:5432/database
+  - Supabase 포맷: postgresql://postgres:password@db.xxx.s    
+  upabase.co:5432/postgres ✅
+  - 로컬 PostgreSQL 포맷:
+  postgresql://localhost:5432/whattodo ✅
+
+  3. DNS 해결 (IPv4 우선)
+
+  dns.setDefaultResultOrder('ipv4first');  //
+  test-connection.js
+  - 현재 테스트 파일에만 적용
+  - 권장: backend/index.js 맨 위에도 추가
+  const dns = require('dns');
+  dns.setDefaultResultOrder('ipv4first');
+
+  ---
+  🔄 전환 시나리오
+
+  로컬 PostgreSQL → Supabase
+
+  # .env 파일만 변경
+  POSTGRES_CONNECTION_STRING=postgresql://postgres:passwor    
+  d@db.xxx.supabase.co:5432/postgres
+  # 코드 변경 불필요!
+
+  Supabase → 로컬 PostgreSQL
+
+  # .env 파일만 변경
+  POSTGRES_CONNECTION_STRING=postgresql://localhost:5432/w    
+  hattodo
+  # 코드 변경 불필요!
+
+  ---
+  ✨ 최종 권장사항
+
+  1. 지금 상태 유지 가능: 코드는 완벽하게 호환
+  2. 개선 사항 (선택):
+    - dns.setDefaultResultOrder('ipv4first') 를 index.js      
+  최상단에 추가
+    - 프로덕션 SSL 설정 재검토
+
+  코드 개선 예시:
+
+  // backend/index.js (첫 줄)
+  const dns = require('dns');
+  dns.setDefaultResultOrder('ipv4first');
+
+  require('dotenv').config();
+  const express = require('express');
+  // ... 나머지 코드
+
+  결론: ✅ 현재 코드는 PostgreSQL과 Supabase 모두와 100%      
+  호환 가능합니다. 환경변수만 변경하면 자유롭게 전환할 수     
+  있습니다.
