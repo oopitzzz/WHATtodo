@@ -2926,68 +2926,68 @@ vercel --prod
 ## 전체 Task 체크리스트
 
 ### 데이터베이스 (10개)
-- [ ] DB-1: Supabase 프로젝트 생성
-- [ ] DB-2: 로컬 환경 변수 설정
-- [ ] DB-3: ENUM 타입 생성
-- [ ] DB-4: users 테이블 생성
-- [ ] DB-5: todos 테이블 생성
-- [ ] DB-6: calendars 테이블 생성
-- [ ] DB-7: notifications 테이블 생성
-- [ ] DB-8: 스키마 무결성 검증
-- [ ] DB-9: 초기 데이터 마이그레이션
+- [x] DB-1: Supabase 프로젝트 생성
+- [x] DB-2: 로컬 환경 변수 설정
+- [x] DB-3: ENUM 타입 생성
+- [x] DB-4: users 테이블 생성
+- [x] DB-5: todos 테이블 생성
+- [x] DB-6: calendars 테이블 생성
+- [x] DB-7: notifications 테이블 생성
+- [x] DB-8: 스키마 무결성 검증
+- [x] DB-9: 초기 데이터 마이그레이션
 - [ ] DB-10: 성능 최적화 및 모니터링 설정
 
 ### 백엔드 (15개)
-- [ ] BE-1: Node.js 프로젝트 초기화
-- [ ] BE-2: 데이터베이스 연결 모듈 구현
-- [ ] BE-3: 공통 미들웨어 구현
-- [ ] BE-4: JWT 유틸리티 구현
-- [ ] BE-5: 비밀번호 해싱 유틸리티 구현
-- [ ] BE-6: 사용자 Repository 구현
-- [ ] BE-7: 인증 Service 구현
-- [ ] BE-8: 인증 API 엔드포인트 구현
-- [ ] BE-9: 할일 Repository 구현
-- [ ] BE-10: 인증 미들웨어 구현
-- [ ] BE-11: 할일 Service 구현
-- [ ] BE-12: 할일 API 엔드포인트 구현
-- [ ] BE-13: 휴지통 API 구현
-- [ ] BE-14: 사용자 프로필 API 구현
-- [ ] BE-15: 캘린더/공휴일 API 구현
+- [x] BE-1: Node.js 프로젝트 초기화
+- [x] BE-2: 데이터베이스 연결 모듈 구현
+- [x] BE-3: 공통 미들웨어 구현
+- [x] BE-4: JWT 유틸리티 구현
+- [x] BE-5: 비밀번호 해싱 유틸리티 구현
+- [x] BE-6: 사용자 Repository 구현
+- [x] BE-7: 인증 Service 구현
+- [x] BE-8: 인증 API 엔드포인트 구현
+- [x] BE-9: 할일 Repository 구현
+- [x] BE-10: 인증 미들웨어 구현
+- [x] BE-11: 할일 Service 구현
+- [x] BE-12: 할일 API 엔드포인트 구현
+- [x] BE-13: 휴지통 API 구현
+- [x] BE-14: 사용자 프로필 API 구현
+- [x] BE-15: 캘린더/공휴일 API 구현
 
 ### 프론트엔드 (30개)
-- [ ] FE-1: Vite + React 프로젝트 생성
-- [ ] FE-2: Tailwind CSS 설정
-- [ ] FE-3: 디렉토리 구조 생성
-- [ ] FE-4: React Router 설정
-- [ ] FE-5: Axios 클라이언트 설정
-- [ ] FE-6: 인증 API 서비스 구현
-- [ ] FE-7: 할일 API 서비스 구현
-- [ ] FE-8: 인증 Zustand 스토어 구현
-- [ ] FE-9: 할일 Zustand 스토어 구현
-- [ ] FE-10: Button 컴포넌트
-- [ ] FE-11: Input 컴포넌트
-- [ ] FE-12: Modal 컴포넌트
-- [ ] FE-13: LoadingSpinner 컴포넌트
-- [ ] FE-14: 로그인 폼 컴포넌트
-- [ ] FE-15: 로그인 페이지
-- [ ] FE-16: 회원가입 폼 및 페이지
-- [ ] FE-17: TodoItem 컴포넌트
-- [ ] FE-18: TodoList 컴포넌트
-- [ ] FE-19: TodoForm 컴포넌트
-- [ ] FE-20: 대시보드 페이지
-- [ ] FE-21: 캘린더 뷰 컴포넌트
-- [ ] FE-22: 캘린더 페이지
-- [ ] FE-23: 휴지통 페이지
-- [ ] FE-24: 설정 페이지
-- [ ] FE-25: MainLayout 컴포넌트
-- [ ] FE-26: AuthLayout 컴포넌트
-- [ ] FE-27: ProtectedRoute 컴포넌트
-- [ ] FE-28: 반응형 디자인 테스트
-- [ ] FE-29: 에러 바운더리 구현
+- [x] FE-1: Vite + React 프로젝트 생성
+- [x] FE-2: Tailwind CSS 설정
+- [x] FE-3: 디렉토리 구조 생성
+- [x] FE-4: React Router 설정
+- [x] FE-5: Axios 클라이언트 설정
+- [x] FE-6: 인증 API 서비스 구현
+- [x] FE-7: 할일 API 서비스 구현
+- [x] FE-8: 인증 Zustand 스토어 구현
+- [x] FE-9: 할일 Zustand 스토어 구현
+- [x] FE-10: Button 컴포넌트
+- [x] FE-11: Input 컴포넌트
+- [x] FE-12: Modal 컴포넌트
+- [x] FE-13: LoadingSpinner 컴포넌트
+- [x] FE-14: 로그인 폼 컴포넌트
+- [x] FE-15: 로그인 페이지
+- [x] FE-16: 회원가입 폼 및 페이지
+- [x] FE-17: TodoItem 컴포넌트
+- [x] FE-18: TodoList 컴포넌트
+- [x] FE-19: TodoForm 컴포넌트
+- [x] FE-20: 대시보드 페이지
+- [x] FE-21: 캘린더 뷰 컴포넌트
+- [x] FE-22: 캘린더 페이지
+- [x] FE-23: 휴지통 페이지
+- [x] FE-24: 설정 페이지
+- [x] FE-25: MainLayout 컴포넌트
+- [x] FE-26: AuthLayout 컴포넌트
+- [x] FE-27: ProtectedRoute 컴포넌트
+- [x] FE-28: 반응형 디자인 테스트
+- [x] FE-29: 에러 바운더리 구현
 - [ ] FE-30: 성능 최적화
 
 ### 통합 및 배포 (8개)
-- [ ] INT-1: 백엔드-데이터베이스 통합 테스트
+- [x] INT-1: 백엔드-데이터베이스 통합 테스트
 - [ ] INT-2: 프론트엔드-백엔드 통합 테스트
 - [ ] INT-3: 버그 수정
 - [ ] DEPLOY-1: 환경 변수 설정

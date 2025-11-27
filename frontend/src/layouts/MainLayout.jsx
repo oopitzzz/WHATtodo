@@ -127,7 +127,7 @@ export default function MainLayout() {
         </div>
 
         {/* 페이지 콘텐츠 */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto px-4 py-4 sm:px-6 md:px-8 lg:px-10">
           <Outlet />
         </div>
       </div>
