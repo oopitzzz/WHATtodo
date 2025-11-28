@@ -9,6 +9,11 @@ export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
 
+  // 페이지 마운트 시 할일 데이터 로드
+  useEffect(() => {
+    fetchTodos();
+  }, [fetchTodos]);
+
   // 필터에 따른 통계 계산
   const stats = {
     total: todos.length,
@@ -29,6 +34,8 @@ export default function DashboardPage() {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingTodo(null);
+    // 폼 닫힐 때 데이터 새로고침 (할일 생성/수정 후 반영)
+    fetchTodos();
   };
 
   return (

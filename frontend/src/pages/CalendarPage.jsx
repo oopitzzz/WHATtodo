@@ -1,6 +1,15 @@
+import { useEffect } from 'react';
 import CalendarView from '../components/domain/calendar/CalendarView';
+import useTodoStore from '../store/todo.store';
 
 export default function CalendarPage() {
+  // 캘린더 페이지로 이동할 때 할일 데이터 새로고침
+  const { fetchTodos } = useTodoStore();
+
+  useEffect(() => {
+    fetchTodos();
+  }, [fetchTodos]);
+
   const handleDateClick = (date) => {
     console.log('선택된 날짜:', date.toLocaleDateString('ko-KR'));
     // 향후 선택된 날짜의 할일을 표시하는 기능 추가

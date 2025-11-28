@@ -4,13 +4,16 @@ const corsMiddleware = require('./_lib/middleware/cors');
 const loggerMiddleware = require('./_lib/middleware/logger');
 const errorHandler = require('./_lib/middleware/errorHandler');
 const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('../swagger-ko.json');  // 한글 문서
+const swaggerDocument = require('./swagger-ko.json');  // ?��? 문서
 
 const app = express();
 
 app.use(corsMiddleware);
 app.use(express.json());
 app.use(loggerMiddleware);
+
+// Handle CORS preflight requests globally
+app.options('*', corsMiddleware);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });

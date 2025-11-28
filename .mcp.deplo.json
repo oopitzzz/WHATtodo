@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp"
+    },
+    "postgresql-mcp": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@henkey/postgres-mcp-server"],
+      "env": {
+        "DATABASE_URL": "postgresql://postgres.dqhvtmphokkfocxeyjur:MzueBPVlp9ptYQNC@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres"
+      }
+    }
+  }
+}

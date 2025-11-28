@@ -115,6 +115,7 @@ const TodoForm = ({ isOpen, onClose, mode = 'create', editingTodo = null }) => {
         await updateTodo(editingTodo.todo_id, submitData);
       }
 
+      // 폼 완료 후 콜백 실행 (캘린더 새로고침 등)
       onClose();
     } catch (error) {
       if (error.response?.data?.message) {

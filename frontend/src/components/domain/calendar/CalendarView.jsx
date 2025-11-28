@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import * as todoApi from '../../../backend/todoApi';
+import useTodoStore from '../../../store/todo.store';
 
 /**
  * 캘린더 뷰 컴포넌트
@@ -11,9 +11,9 @@ const CalendarView = ({ initialYear, initialMonth, onDateClick }) => {
   const today = new Date();
   const [year, setYear] = useState(initialYear || today.getFullYear());
   const [month, setMonth] = useState(initialMonth || today.getMonth() + 1);
-  const [holidays, setHolidays] = useState([]);
-  const [todos, setTodos] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Zustand store에서 todos 데이터 가져오기
+  const { todos, fetchTodos } = useTodoStore();
 
   // 고정 공휴일 목록 (음력 제외)
   const FIXED_HOLIDAYS = {
@@ -27,22 +27,10 @@ const CalendarView = ({ initialYear, initialMonth, onDateClick }) => {
     '12-25': '크리스마스',
   };
 
-  // 할일 데이터 로드
+  // 컴포넌트 마운트 시 할일 데이터 로드
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const todosRes = await todoApi.getTodos({ limit: 1000 });
-        setTodos(todosRes.data || []);
-      } catch (error) {
-        console.error('캘린더 데이터 로드 실패:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [year, month]);
+    fetchTodos();
+  }, [fetchTodos]);
 
   // 월의 첫 날과 마지막 날 계산
   const firstDay = new Date(year, month - 1, 1);
@@ -151,12 +139,7 @@ const CalendarView = ({ initialYear, initialMonth, onDateClick }) => {
       </div>
 
       {/* 캘린더 그리드 */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-96">
-          <p className="text-gray-500">데이터를 불러오는 중...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1">
           {calendarDates.map((date, idx) => {
             const holiday = getHolidayName(date);
             const todoCount = getTodoCountForDate(date);
@@ -198,7 +181,6 @@ const CalendarView = ({ initialYear, initialMonth, onDateClick }) => {
             );
           })}
         </div>
-      )}
 
       {/* 범례 */}
       <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-600 space-y-1">

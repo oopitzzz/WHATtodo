@@ -64,7 +64,19 @@
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__list_network_requests",
       "mcp__chrome-devtools__list_console_messages",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(vercel whoami:*)",
+      "Bash(vercel project:*)",
+      "Bash(vercel logs:*)",
+      "Bash(vercel deployments)",
+      "Bash(vercel list:*)",
+      "Bash(vercel link:*)",
+      "Bash(vercel env:*)",
+      "Bash(vercel pull:*)",
+      "Bash(vercel ls:*)",
+      "Bash(printf:*)",
+      "Bash(timeout 5 bash:*)",
+      "Bash(timeout 45 node:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
