@@ -1,0 +1,63 @@
+{
+  "scenario": "SC-001: 신규 사용자 온보딩",
+  "testUser": {
+    "email": "sc001-test-1764292175600@example.com",
+    "password": "TestPassword123!",
+    "nickname": "로컬테스터"
+  },
+  "targetUrl": "http://localhost:5173",
+  "backendUrl": "http://localhost:3000/api",
+  "timestamp": "2025-11-28T01:09:56.609Z",
+  "results": [
+    {
+      "step": "회원가입 페이지 로드",
+      "status": "PASS",
+      "timestamp": "2025-11-28T01:09:38.172Z"
+    },
+    {
+      "step": "회원가입 폼 입력",
+      "status": "PASS",
+      "timestamp": "2025-11-28T01:09:42.700Z",
+      "data": {
+        "email": "sc001-test-1764292175600@example.com",
+        "nickname": "로컬테스터"
+      }
+    },
+    {
+      "step": "회원가입 성공 및 자동 로그인",
+      "status": "PASS",
+      "timestamp": "2025-11-28T01:09:45.396Z",
+      "redirectUrl": "http://localhost:5173/dashboard"
+    },
+    {
+      "step": "첫 번째 할 일 생성",
+      "status": "PASS",
+      "timestamp": "2025-11-28T01:09:54.962Z",
+      "todo": {
+        "title": "자료구조 과제 제출",
+        "priority": "높음",
+        "dueDate": "2025-11-30"
+      }
+    },
+    {
+      "step": "할 일 완료 처리",
+      "status": "PASS",
+      "timestamp": "2025-11-28T01:09:56.608Z"
+    }
+  ],
+  "screenshots": [
+    "sc001-01-signup-page.png",
+    "sc001-02-signup-filled.png",
+    "sc001-03-after-signup.png",
+    "sc001-04-add-todo-modal.png",
+    "sc001-05-todo-filled.png",
+    "sc001-06-todo-created.png",
+    "sc001-07-todo-completed.png"
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "successRate": "100%"
+  }
+}
