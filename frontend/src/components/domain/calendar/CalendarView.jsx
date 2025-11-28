@@ -15,17 +15,24 @@ const CalendarView = ({ initialYear, initialMonth, onDateClick }) => {
   const [todos, setTodos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 휴일 및 할일 데이터 로드
+  // 고정 공휴일 목록 (음력 제외)
+  const FIXED_HOLIDAYS = {
+    '01-01': '신정',
+    '03-01': '삼일절',
+    '05-05': '어린이날',
+    '06-06': '현충일',
+    '08-15': '광복절',
+    '10-03': '개천절',
+    '10-09': '한글날',
+    '12-25': '크리스마스',
+  };
+
+  // 할일 데이터 로드
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [holidaysRes, todosRes] = await Promise.all([
-          todoApi.getHolidays({ year, month }),
-          todoApi.getTodos({ limit: 1000 })
-        ]);
-
-        setHolidays(holidaysRes.data || []);
+        const todosRes = await todoApi.getTodos({ limit: 1000 });
         setTodos(todosRes.data || []);
       } catch (error) {
         console.error('캘린더 데이터 로드 실패:', error);
@@ -53,9 +60,8 @@ const CalendarView = ({ initialYear, initialMonth, onDateClick }) => {
 
   // 특정 날짜의 휴일 확인
   const getHolidayName = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    const holiday = holidays.find(h => h.date === dateStr);
-    return holiday?.holiday_name || null;
+    const monthDay = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return FIXED_HOLIDAYS[monthDay] || null;
   };
 
   // 특정 날짜의 할일 개수
@@ -169,9 +175,16 @@ const CalendarView = ({ initialYear, initialMonth, onDateClick }) => {
                   ${holiday ? 'border-l-4 border-red-500' : ''}
                 `}
               >
-                <div className="text-sm font-semibold text-gray-900">
+                <div className={`text-sm font-semibold ${holiday && isCurrent ? 'text-red-600' : 'text-gray-900'}`}>
                   {date.getDate()}
                 </div>
+
+                {/* 휴일 표시 */}
+                {holiday && isCurrent && (
+                  <div className="text-xs text-black font-medium truncate">
+                    {holiday}
+                  </div>
+                )}
 
                 {/* 할일 개수 표시 */}
                 {todoCount > 0 && isCurrent && (
@@ -179,13 +192,6 @@ const CalendarView = ({ initialYear, initialMonth, onDateClick }) => {
                     {[...Array(Math.min(todoCount, 3))].map((_, i) => (
                       <div key={i} className="w-1 h-1 bg-blue-500 rounded-full" />
                     ))}
-                  </div>
-                )}
-
-                {/* 휴일 표시 */}
-                {holiday && isCurrent && (
-                  <div className="text-xs text-red-600 font-medium truncate">
-                    {holiday}
                   </div>
                 )}
               </div>

@@ -22,8 +22,10 @@ export default function TrashPage() {
     setError('');
     try {
       const response = await todoApi.getTrash({ page, pageSize: PAGE_SIZE });
-      setTrashItems(response.data?.items || []);
-      setPagination(response.data?.meta || {});
+      // backend가 { items, meta } 형태로 반환하므로 response.data로 접근
+      const { items = [], meta = {} } = response.data || response;
+      setTrashItems(items);
+      setPagination(meta);
     } catch (err) {
       setError('휴지통 데이터를 불러올 수 없습니다');
       console.error(err);

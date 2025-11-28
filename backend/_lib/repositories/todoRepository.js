@@ -77,7 +77,7 @@ async function findTodosByUserId(userId, options = {}) {
   const values = [userId];
   const whereClause = buildTodoFilterClause(values, options);
 
-  const sortColumn = SORTABLE_COLUMNS.has(options.sortBy) ? options.sortBy : 'due_date';
+  const sortColumn = SORTABLE_COLUMNS.has(options.sortBy) ? options.sortBy : 'created_at';
   const sortDirection = options.sortDirection === 'desc' ? 'DESC' : 'ASC';
   const limitPlaceholder = pushValue(values, sanitizeLimit(options.limit));
   const offsetPlaceholder = pushValue(values, sanitizeOffset(options.offset));

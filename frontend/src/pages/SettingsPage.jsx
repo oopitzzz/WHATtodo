@@ -20,7 +20,7 @@ export default function SettingsPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
 
-  // 프로필 데이터 로드
+  // 프로필 초기 로드
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -29,11 +29,12 @@ export default function SettingsPage() {
     try {
       const response = await authApi.getUserProfile();
       setFormData({
-        nickname: response.user.nickname || '',
-        notificationEnabled: response.user.notificationEnabled ?? true
+        nickname: response?.data?.nickname || '',
+        notificationEnabled: response?.data?.notification_enabled ?? true
       });
+      setUser(response?.data);
     } catch (err) {
-      setError('프로필을 불러올 수 없습니다');
+      setError('프로필을 불러오지 못했습니다');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -45,7 +46,7 @@ export default function SettingsPage() {
 
     const trimmedNickname = formData.nickname.trim();
     if (!trimmedNickname) {
-      newErrors.nickname = '닉네임을 입력해주세요';
+      newErrors.nickname = '닉네임을 입력해 주세요';
     } else if (trimmedNickname.length < 2 || trimmedNickname.length > 20) {
       newErrors.nickname = '닉네임은 2~20자여야 합니다';
     }
@@ -56,13 +57,13 @@ export default function SettingsPage() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
 
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         [name]: ''
       }));
@@ -86,7 +87,7 @@ export default function SettingsPage() {
         notificationEnabled: formData.notificationEnabled
       });
 
-      setUser(response.user);
+      setUser(response?.data);
       setSuccessMessage('프로필이 저장되었습니다');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
@@ -116,7 +117,7 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner size="md" text="설정을 불러오는 중..." />
+        <LoadingSpinner size="md" text="설정을 불러오는 중.." />
       </div>
     );
   }
@@ -126,7 +127,7 @@ export default function SettingsPage() {
       {/* 헤더 */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">설정</h1>
-        <p className="text-gray-600">프로필 및 계정 설정을 관리하세요</p>
+        <p className="text-gray-600">프로필과 계정 설정을 관리하세요</p>
       </div>
 
       {/* 메시지 */}
@@ -175,7 +176,7 @@ export default function SettingsPage() {
               className="w-4 h-4 accent-blue-600"
             />
             <label htmlFor="notificationEnabled" className="ml-3 text-sm font-medium text-gray-700">
-              마감일 알림 활성화
+              마감일 알림 수신
             </label>
           </div>
 

@@ -18,7 +18,7 @@ const TodoForm = ({ isOpen, onClose, mode = 'create', editingTodo = null }) => {
     title: '',
     description: '',
     priority: 'NORMAL',
-    due_date: '',
+    dueDate: '',
     memo: ''
   });
   const [errors, setErrors] = useState({});
@@ -32,7 +32,7 @@ const TodoForm = ({ isOpen, onClose, mode = 'create', editingTodo = null }) => {
         title: editingTodo.title || '',
         description: editingTodo.description || '',
         priority: editingTodo.priority || 'NORMAL',
-        due_date: editingTodo.due_date || '',
+        dueDate: editingTodo.dueDate || editingTodo.due_date || '',
         memo: editingTodo.memo || ''
       });
     } else {
@@ -40,7 +40,7 @@ const TodoForm = ({ isOpen, onClose, mode = 'create', editingTodo = null }) => {
         title: '',
         description: '',
         priority: 'NORMAL',
-        due_date: '',
+        dueDate: '',
         memo: ''
       });
     }
@@ -59,14 +59,14 @@ const TodoForm = ({ isOpen, onClose, mode = 'create', editingTodo = null }) => {
     }
 
     // 마감일 검증 (과거 날짜 방지)
-    if (formData.due_date) {
-      const dueDate = new Date(formData.due_date);
+    if (formData.dueDate) {
+      const dueDate = new Date(formData.dueDate);
       dueDate.setHours(0, 0, 0, 0);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       if (dueDate < today) {
-        newErrors.due_date = '마감일은 오늘 이후여야 합니다';
+        newErrors.dueDate = '마감일은 오늘 이후여야 합니다';
       }
     }
 
@@ -105,7 +105,7 @@ const TodoForm = ({ isOpen, onClose, mode = 'create', editingTodo = null }) => {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         priority: formData.priority,
-        due_date: formData.due_date || undefined,
+        dueDate: formData.dueDate || undefined,
         memo: formData.memo.trim() || undefined
       };
 
@@ -193,10 +193,10 @@ const TodoForm = ({ isOpen, onClose, mode = 'create', editingTodo = null }) => {
         <Input
           type="date"
           label="마감일"
-          name="due_date"
-          value={formData.due_date}
+          name="dueDate"
+          value={formData.dueDate}
           onChange={handleInputChange}
-          error={errors.due_date}
+          error={errors.dueDate}
         />
 
         <Input

@@ -1,4 +1,4 @@
-import client from './client';
+import client from "./client";
 
 /**
  * 할일 목록 조회
@@ -8,16 +8,18 @@ import client from './client';
 export async function getTodos(filters = {}) {
   const params = new URLSearchParams();
 
-  if (filters.status) params.append('status', filters.status);
-  if (filters.sortBy) params.append('sortBy', filters.sortBy);
-  if (filters.sortDirection) params.append('sortDirection', filters.sortDirection);
-  if (filters.limit) params.append('limit', filters.limit);
-  if (filters.offset) params.append('offset', filters.offset);
-  if (filters.search) params.append('search', filters.search);
-  if (filters.includeDeleted) params.append('includeDeleted', filters.includeDeleted);
+  if (filters.status) params.append("status", filters.status);
+  if (filters.sortBy) params.append("sortBy", filters.sortBy);
+  if (filters.sortDirection)
+    params.append("sortDirection", filters.sortDirection);
+  if (filters.limit) params.append("limit", filters.limit);
+  if (filters.offset) params.append("offset", filters.offset);
+  if (filters.search) params.append("search", filters.search);
+  if (filters.includeDeleted)
+    params.append("includeDeleted", filters.includeDeleted);
 
   const queryString = params.toString();
-  const url = queryString ? `/todos?${queryString}` : '/todos';
+  const url = queryString ? `/todos?${queryString}` : "/todos";
 
   const response = await client.get(url);
   return response.data;
@@ -29,7 +31,7 @@ export async function getTodos(filters = {}) {
  * @returns {Promise<{data: Todo}>}
  */
 export async function createTodo(todoData) {
-  const response = await client.post('/todos', todoData);
+  const response = await client.post("/todos", todoData);
   return response.data;
 }
 
@@ -70,7 +72,7 @@ export async function completeTodo(id) {
  * @param {string} status - 복원할 상태 (기본값: ACTIVE)
  * @returns {Promise<{data: Todo}>}
  */
-export async function restoreTodo(id, status = 'ACTIVE') {
+export async function restoreTodo(id, status = "ACTIVE") {
   const response = await client.patch(`/todos/${id}/restore`, { status });
   return response.data;
 }
@@ -91,10 +93,11 @@ export async function deleteTodo(id) {
  * @returns {Promise<{data: Holiday[]}>}
  */
 export async function getHolidays({ year, month }) {
-  const response = await client.get('/calendar/holidays', {
-    params: { year, month }
+  const response = await client.get("/calendar/holidays", {
+    params: { year, month },
   });
-  return response.data;
+  // 백엔드가 배열을 바로 반환하므로 data 필드가 없을 수도 있음
+  return { data: response.data ?? [] };
 }
 
 /**
@@ -103,7 +106,7 @@ export async function getHolidays({ year, month }) {
  * @returns {Promise<{data: {items: Todo[], meta: {page, pageSize, total, totalPages}}}}>}
  */
 export async function getTrash(params = { page: 1, pageSize: 20 }) {
-  const response = await client.get('/trash', { params });
+  const response = await client.get("/trash", { params });
   return response.data;
 }
 

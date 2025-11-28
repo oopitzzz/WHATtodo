@@ -15,7 +15,7 @@ function buildTrashRouter({ authMiddleware = defaultAuthMiddleware, trashService
         pageSize: req.query.pageSize
       };
       const result = await trashService.getTrash(req.user.userId, options);
-      res.json(result);
+      res.json({ data: result });
     } catch (error) {
       next(error);
     }

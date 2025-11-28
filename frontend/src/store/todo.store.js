@@ -5,7 +5,7 @@ const useTodoStore = create((set, get) => ({
   todos: [],
   filter: 'ACTIVE',
   sortBy: 'created_at',
-  sortDirection: 'DESC',
+  sortDirection: 'desc',
   isLoading: false,
   error: null,
 
